@@ -1,5 +1,18 @@
 # Execute JavaScript from Go
 
+This is a fork of https://github.com/tommie/v8go, which is a fork of
+https://github.com/rogchap/v8go at v0.9.0.
+
+The purpose of this add support for features in v8 that are not yet accessible
+in v8go.
+
+Those features are added to support my other project, create a headless browser
+with a working DOM implementation in Go: https://github.com/stroiman/go-dom
+
+Original readme from tommie/v8go follows
+
+---
+
 <a href="https://github.com/tommie/v8go/releases"><img src="https://img.shields.io/github/v/release/tommie/v8go" alt="Github release"></a>
 [![Go Report Card](https://goreportcard.com/badge/github.com/tommie/v8go)](https://goreportcard.com/report/github.com/tommie/v8go)
 [![Go Reference](https://pkg.go.dev/badge/github.com/tommie/v8go.svg)](https://pkg.go.dev/github.com/tommie/v8go)
