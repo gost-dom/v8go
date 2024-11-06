@@ -139,6 +139,16 @@ func NewValue(iso *Isolate, val interface{}) (*Value, error) {
 	return rtnVal, nil
 }
 
+func NewExternalValue(iso *Isolate, val unsafe.Pointer) *Value {
+	return &Value{
+		ptr: C.NewValueExternal(iso.ptr, val),
+	}
+}
+
+func (v *Value) External() unsafe.Pointer {
+	return C.ValueToExternal(v.ptr)
+}
+
 // Format implements the fmt.Formatter interface to provide a custom formatter
 // primarily to output the detail string (for debugging) with `%+v` verb.
 func (v *Value) Format(s fmt.State, verb rune) {
