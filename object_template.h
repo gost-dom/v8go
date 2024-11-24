@@ -32,6 +32,8 @@ extern void ObjectTemplateSetAccessorProperty(m_template* ptr,
                                               m_template* get,
                                               m_template* set,
                                               int attributes);
+extern void ObjectTemplateSetIndexHandler(TemplatePtr ptr,
+                                          int get_callback_ref);
 
 #ifdef __cplusplus
 }

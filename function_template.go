@@ -26,6 +26,8 @@ type FunctionCallbackInfo struct {
 	ctx  *Context
 	args []*Value
 	this *Object
+	// index is only used for indexed property callbacks
+	index uint32
 }
 
 // A ValueError can be returned from a FunctionCallbackWithError, and
@@ -48,6 +50,10 @@ func (i *FunctionCallbackInfo) This() *Object {
 // Args returns a slice of the value arguments that are passed to the JS function.
 func (i *FunctionCallbackInfo) Args() []*Value {
 	return i.args
+}
+
+func (i *FunctionCallbackInfo) Index() uint32 {
+	return i.index
 }
 
 func (i *FunctionCallbackInfo) Release() {
@@ -182,14 +188,16 @@ func goFunctionCallback(
 	cbref int,
 	thisAndArgs *C.ValuePtr,
 	argsCount int,
+	index uint32,
 ) (rval C.ValuePtr, rerr C.ValuePtr) {
 	ctx := getContext(ctxref)
 
 	this := *thisAndArgs
 	info := &FunctionCallbackInfo{
-		ctx:  ctx,
-		this: &Object{&Value{ptr: this, ctx: ctx}},
-		args: make([]*Value, argsCount),
+		ctx:   ctx,
+		this:  &Object{&Value{ptr: this, ctx: ctx}},
+		args:  make([]*Value, argsCount),
+		index: index,
 	}
 
 	argv := (*[1 << 30]C.ValuePtr)(unsafe.Pointer(thisAndArgs))[1 : argsCount+1 : argsCount+1]

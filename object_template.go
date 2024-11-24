@@ -18,6 +18,18 @@ import (
 // can also be validated when accessing a property.
 type PropertyAttribute uint8
 
+// PropertyCallbackInfo is passed when intercepting a named or indexed property.
+type PropertyCallbackInfo struct {
+	ctx  *Context
+	args []*Value
+	this *Object
+	// Holder marks the object in the prototype chain that has the receiver. This
+	// corresponds to `HolderV2` in the v8 API.
+	holder *Object
+	// True if the intercepted function should throw if an error occurs. Usually, true corresponds to ‘'use strict’`.
+	interceptOnError bool
+}
+
 const (
 	// None.
 	None PropertyAttribute = 0
@@ -118,4 +130,14 @@ func (o *ObjectTemplate) InternalFieldCount() uint32 {
 
 func (o *ObjectTemplate) apply(opts *contextOptions) {
 	opts.gTmpl = o
+}
+
+func (o *ObjectTemplate) SetIndexedHandler(callback FunctionCallbackWithError) {
+	if callback == nil {
+		panic("nil FunctionCallback argument not supported")
+	}
+
+	iso := o.iso
+	cbref := iso.registerCallback(callback)
+	C.ObjectTemplateSetIndexHandler(o.ptr, C.int(cbref))
 }

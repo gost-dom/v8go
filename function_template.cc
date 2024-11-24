@@ -41,7 +41,7 @@ void FunctionTemplateCallback(const FunctionCallbackInfo<Value>& info) {
   }
 
   goFunctionCallback_return retval =
-      goFunctionCallback(ctx_ref, callback_ref, thisAndArgs, args_count);
+      goFunctionCallback(ctx_ref, callback_ref, thisAndArgs, args_count, 0);
   if (retval.r1 != nullptr) {
     iso->ThrowException(retval.r1->ptr.Get(iso));
   } else if (retval.r0 != nullptr) {
