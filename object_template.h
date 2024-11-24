@@ -35,6 +35,8 @@ extern void ObjectTemplateSetAccessorProperty(m_template* ptr,
 extern void ObjectTemplateMarkAsUndetectable(m_template* ptr);
 extern void ObjectTemplateSetCallAsFunctionHandler(m_template* ptr,
                                                    int callback_ref);
+extern void ObjectTemplateSetIndexHandler(TemplatePtr ptr,
+                                          int get_callback_ref);
 
 #ifdef __cplusplus
 }
