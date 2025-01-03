@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"io"
 	"math/big"
+	"runtime/cgo"
 	"unsafe"
 )
 
@@ -139,14 +140,86 @@ func NewValue(iso *Isolate, val interface{}) (*Value, error) {
 	return rtnVal, nil
 }
 
-func NewExternalValue(iso *Isolate, val unsafe.Pointer) *Value {
+// NewValueExternal allows storing an [unsafe.Pointer] in a value. The primary
+// use case is setting internal fields on objects, referencing native objects
+// that can be used in native functions.
+//
+// To store references to Go objects, prefer using [NewValueExternalHandle] instead.
+// This function exists mostly for code that already uses unsafe.Pointer values.
+func NewValueExternal(iso *Isolate, val unsafe.Pointer) *Value {
 	return &Value{
 		ptr: C.NewValueExternal(iso.ptr, val),
 	}
 }
 
+// NewValueExternalHandle can store a reference to a Go object as an "external"
+// v8 value, by using a [cgo.Handle]. The primary use case is when exposing
+// native Go objects to JavaScript code.
+//
+// Native external values can be stored as "internal fields" on v8 objects;
+// using [Object.SetInternalField].
+//
+// Be sure to call [cgo.Handle.Delete] when done with the object.
+//
+//	type Calculator struct {} // Has methods Add and Subtract
+//
+//	func CreateJSCalculator(iso *Isolate) *v8.FunctionTemplate {
+//		constructor := v8.NewFunctionTemplate(/* ... */)
+//		instanceTemplate := constructor.InstanceTemplate()
+//		instanceTemplate.SetInternalFieldCount(1)
+//		prototypeTemplate := constructor.PrototypeTemplate()
+//		prototypeTemplate.Set("Add",
+//			v8.NewFunctionTemplate(iso,
+//				func(info *v8.FunctionCallbackInfo) (*v8.Value, error) {
+//					handle := info.This().GetInternalField(0).ExternalHandle()
+//					calculator, ok := handle.Value().(*Calculator)
+//				})
+//		)
+//		return constructor;
+//	}
+//
+//	func CreateJSCalculatorInstance(
+//		iso *Isolate,
+//		jsCalculator *v8.FunctionTemplate,
+//		calculator *Calculator) *v8.Value {
+//		instance := jsCalculator.InstanceTempalte().NewInstance()
+//		instance.SetInternalField(0, cgo.NewHandle(calculator)
+//		return instance
+//	}
+func NewValueExternalHandle(iso *Isolate, val cgo.Handle) *Value {
+	return &Value{
+		ptr: C.NewValueExternal(iso.ptr, unsafe.Pointer(&val)),
+	}
+}
+
+// External retrieves an [unsafe.Pointer]. This value must have been created
+// using [NewValueExternal].
+//
+// The use of these two functions is discouraged. Prefer using
+// [NewValueExternalHandle]/[Value.ExternalHandle] instead.
+//
+// This will return nil, if the value does not contain an external value.
 func (v *Value) External() unsafe.Pointer {
+	if !v.IsExternal() {
+		return nil
+	}
 	return C.ValueToExternal(v.ptr)
+}
+
+// ExternalHandle retrieves the [cgo.Handle] from a [Value] that was created
+// using [NewValueExternalHandle].
+//
+// This will return an zero handle if the value is not an external value.
+//
+// Warning, reading a value that was created using [NewValueExternal] is
+// invalid, but will not be detected by v8go. Prefer using only handles if
+// possible.
+func (v *Value) ExternalHandle() cgo.Handle {
+	unsafePtr := v.External()
+	if unsafePtr == nil {
+		return 0
+	}
+	return *(*cgo.Handle)(unsafePtr)
 }
 
 // Format implements the fmt.Formatter interface to provide a custom formatter
