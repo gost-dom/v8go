@@ -173,3 +173,24 @@ int ObjectDeleteIdx(ValuePtr ptr, uint32_t idx) {
   LOCAL_OBJECT(ptr);
   return obj->Delete(local_ctx, idx).ToChecked();
 }
+
+RtnValue ObjectGetPrototype(ValuePtr ptr) {
+  LOCAL_OBJECT(ptr);
+  RtnValue rtn = {};
+
+  Local<Value> result = obj->GetPrototypeV2();
+  m_value* new_val = new m_value;
+  new_val->id = 0;
+  new_val->iso = iso;
+  new_val->ctx = ctx;
+  new_val->ptr = Global<Value>(iso, result);
+
+  rtn.value = tracked_value(ctx, new_val);
+  return rtn;
+}
+
+void ObjectSetPrototype(ValuePtr ptr, ValuePtr proto_ptr) {
+  LOCAL_OBJECT(ptr);
+  // Local<Context> local_ctx = ctx_ptr->ptr.Get(iso);
+  obj->SetPrototypeV2(local_ctx, proto_ptr->ptr.Get(iso)).Check();
+}

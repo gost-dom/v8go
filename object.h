@@ -26,6 +26,8 @@ int ObjectHasIdx(ValuePtr ptr, uint32_t idx);
 int ObjectDelete(ValuePtr ptr, const char* key);
 int ObjectDeleteAnyKey(ValuePtr ptr, ValuePtr key);
 int ObjectDeleteIdx(ValuePtr ptr, uint32_t idx);
+extern RtnValue ObjectGetPrototype(ValuePtr ptr);
+extern void ObjectSetPrototype(ValuePtr ptr, ValuePtr proto_ptr);
 
 #ifdef __cplusplus
 }  // extern "C"

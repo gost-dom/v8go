@@ -202,3 +202,21 @@ func (o *Object) DeleteSymbol(key *Symbol) bool {
 func (o *Object) DeleteIdx(idx uint32) bool {
 	return C.ObjectDeleteIdx(o.ptr, C.uint32_t(idx)) != 0
 }
+
+// GetPrototype is equivalent to `Object.GetPrototypeOf(o)` in JavaScript.
+//
+// NOTE: This uses Object::GetPrototypeV2 internally, as GetPrototype is
+// deprecated.
+func (o *Object) GetPrototype() *Object {
+	rtn := C.ObjectGetPrototype(o.ptr)
+	return &Object{&Value{rtn.value, o.ctx}}
+}
+
+// SetPrototype is equivalent to `Object.SetPrototype(o, proto)` in JavaScript.
+// `Object.GetPrototypeOf(...)` in JavaScript.
+//
+// NOTE: This uses Object::SetPrototypeV2 internally, as SetPrototype is
+// deprecated.
+func (o *Object) SetPrototype(proto *Object) {
+	C.ObjectSetPrototype(o.ptr, proto.ptr)
+}
