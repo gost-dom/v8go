@@ -3,7 +3,8 @@ name: Test
 on:
   push:
     branches:
-    - master
+      - master
+      - external-support
   pull_request:
   workflow_dispatch:
   workflow_call:
