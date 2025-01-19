@@ -140,12 +140,11 @@ func NewValue(iso *Isolate, val interface{}) (*Value, error) {
 	return rtnVal, nil
 }
 
-// NewValueExternal allows storing an [unsafe.Pointer] in a value. The primary
-// use case is setting internal fields on objects, referencing native objects
-// that can be used in native functions.
+// NewValueExternal allows storing an [unsafe.Pointer] in a value. This function
+// is discouraged, prefer using [NewValueExternalHandle] instead. This function
+// exists primarily for code that already uses unsafe pointers.
 //
-// To store references to Go objects, prefer using [NewValueExternalHandle] instead.
-// This function exists mostly for code that already uses unsafe.Pointer values.
+// An unsafe pointer can be read using [Value.External]
 func NewValueExternal(iso *Isolate, val unsafe.Pointer) *Value {
 	return &Value{
 		ptr: C.NewValueExternal(iso.ptr, val),
@@ -159,33 +158,13 @@ func NewValueExternal(iso *Isolate, val unsafe.Pointer) *Value {
 // Native external values can be stored as "internal fields" on v8 objects;
 // using [Object.SetInternalField].
 //
-// Be sure to call [cgo.Handle.Delete] when done with the object.
+// Warning: A cgo handle should be deleted through a call to [cgo.Handle.Delete]
+// when you are done with the object. Unfortunately v8go doesn't yet support
+// a callback when a JavaScript object is garbage collected.
 //
-//	type Calculator struct {} // Has methods Add and Subtract
-//
-//	func CreateJSCalculator(iso *Isolate) *v8.FunctionTemplate {
-//		constructor := v8.NewFunctionTemplate(/* ... */)
-//		instanceTemplate := constructor.InstanceTemplate()
-//		instanceTemplate.SetInternalFieldCount(1)
-//		prototypeTemplate := constructor.PrototypeTemplate()
-//		prototypeTemplate.Set("Add",
-//			v8.NewFunctionTemplate(iso,
-//				func(info *v8.FunctionCallbackInfo) (*v8.Value, error) {
-//					handle := info.This().GetInternalField(0).ExternalHandle()
-//					calculator, ok := handle.Value().(*Calculator)
-//				})
-//		)
-//		return constructor;
-//	}
-//
-//	func CreateJSCalculatorInstance(
-//		iso *Isolate,
-//		jsCalculator *v8.FunctionTemplate,
-//		calculator *Calculator) *v8.Value {
-//		instance := jsCalculator.InstanceTempalte().NewInstance()
-//		instance.SetInternalField(0, cgo.NewHandle(calculator)
-//		return instance
-//	}
+// For a v8 context that is not short lived, this will cause a memory leak if
+// new objects are created continuously. For a short-lived context, be sure to
+// delete the cgo handles when the context is disposed.
 func NewValueExternalHandle(iso *Isolate, val cgo.Handle) *Value {
 	return &Value{
 		ptr: C.NewValueExternal(iso.ptr, unsafe.Pointer(&val)),
@@ -195,7 +174,7 @@ func NewValueExternalHandle(iso *Isolate, val cgo.Handle) *Value {
 // External retrieves an [unsafe.Pointer]. This value must have been created
 // using [NewValueExternal].
 //
-// The use of these two functions is discouraged. Prefer using
+// The use of this pair of functions is discouraged. Prefer using
 // [NewValueExternalHandle]/[Value.ExternalHandle] instead.
 //
 // This will return nil, if the value does not contain an external value.
