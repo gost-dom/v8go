@@ -6,6 +6,7 @@ package v8go_test
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"math"
 	"math/big"
@@ -427,7 +428,10 @@ func TestValueBigInt(t *testing.T) {
 	iso := v8.NewIsolate()
 	defer iso.Dispose()
 
-	x, _ := new(big.Int).SetString("36893488147419099136", 10) // larger than a single word size (64bit)
+	x, _ := new(
+		big.Int,
+	).SetString("36893488147419099136", 10)
+	// larger than a single word size (64bit)
 
 	tests := [...]struct {
 		source   string
@@ -697,7 +701,10 @@ func TestValueIsXXX(t *testing.T) {
 				t.Fatalf("failed to run script: %v", err)
 			}
 			if !tt.assert(val) {
-				t.Errorf("value is false for %s", runtime.FuncForPC(reflect.ValueOf(tt.assert).Pointer()).Name())
+				t.Errorf(
+					"value is false for %s",
+					runtime.FuncForPC(reflect.ValueOf(tt.assert).Pointer()).Name(),
+				)
 			}
 		})
 	}
@@ -814,6 +821,44 @@ func TestValueArrayBufferContents(t *testing.T) {
 	}
 	_, _, err = val.SharedArrayBufferGetContents()
 	if err == nil {
-		t.Fatalf("Expected an error trying call SharedArrayBufferGetContents on value of incorrect type")
+		t.Fatalf(
+			"Expected an error trying call SharedArrayBufferGetContents on value of incorrect type",
+		)
+	}
+}
+
+func TestValueStrictEquals(t *testing.T) {
+	ctx := v8.NewContext()
+	defer ctx.Close()
+
+	numberOne, err1 := ctx.RunScript("1", "")
+	numberOneB, err2 := ctx.RunScript("1", "")
+	numberTwo, err3 := ctx.RunScript("2", "")
+	stringOne, err4 := ctx.RunScript("'1'", "")
+	function, err5 := ctx.RunScript("const fn = () => {}; fn", "")
+	sameFunction, err6 := ctx.RunScript("fn", "")
+	anotherFunction, err7 := ctx.RunScript("const fn2 = () => {}; fn2", "")
+
+	if err := errors.Join(err1, err2, err3, err4, err5, err6, err7); err != nil {
+		t.Fatal("Error getting test values", err)
+	}
+
+	if !numberOne.StrictEquals(numberOneB) {
+		t.Fatalf("Number 1 and Number 1 should be strict equal")
+	}
+	if numberOne.StrictEquals(stringOne) {
+		t.Fatalf("Number 1 and string '1' should not be strict equal")
+	}
+
+	if numberOne.StrictEquals(numberTwo) {
+		t.Fatalf("Number 1 and number 2 should not be strict equal")
+	}
+
+	if !function.StrictEquals(sameFunction) {
+		t.Fatalf("Getting the same function variable twice should be strict equal")
+	}
+
+	if function.StrictEquals(anotherFunction) {
+		t.Fatalf("Comparing two different functions should not be strict equal")
 	}
 }
