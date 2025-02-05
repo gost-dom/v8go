@@ -1,10 +1,12 @@
-#include "value.h"
+#include <stdint.h>
+
 #include "context.h"
 #include "deps/include/v8-context.h"
 #include "deps/include/v8-external.h"
 #include "isolate-macros.h"
 #include "utils.h"
 #include "value-macros.h"
+#include "value.h"
 
 #define ISOLATE_SCOPE_INTERNAL_CONTEXT(iso) \
   ISOLATE_SCOPE(iso);                       \
@@ -200,6 +202,10 @@ ValuePtr NewValueExternal(IsolatePtr iso, void* v) {
   return tracked_value(ctx, val);
 }
 
+ValuePtr NewValueExternalUintptr(IsolatePtr iso, uintptr_t v) {
+  return NewValueExternal(iso, (void*)v);
+}
+
 const uint32_t* ValueToArrayIndex(ValuePtr ptr) {
   LOCAL_VALUE(ptr);
   Local<Uint32> array_index;
@@ -299,14 +305,16 @@ RtnValue ValueToObject(ValuePtr ptr) {
 }
 
 void* ValueToExternal(ValuePtr ptr) {
-  // LOCAL_VALUE(val);
-  // val->ptr.Get(iso);
-  //
   Isolate* iso = ptr->iso;
+  ISOLATE_SCOPE(iso);
 
   Local<External> wrap = Local<External>::Cast(ptr->ptr.Get(iso));
-  void* value = wrap->Value();
-  return value;
+  void* x = wrap->Value();
+  return x;
+}
+
+uintptr_t ValueToExternalUintptr(ValuePtr ptr) {
+  return (uintptr_t)ValueToExternal(ptr);
 }
 
 int ValueSameValue(ValuePtr val1, ValuePtr val2) {
