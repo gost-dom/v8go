@@ -1,4 +1,4 @@
-module github.com/tommie/v8go
+module github.com/gost-dom/v8go
 
 go 1.19
 
