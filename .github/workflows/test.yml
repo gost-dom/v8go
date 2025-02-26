@@ -24,9 +24,8 @@ jobs:
         go-version:
         # Check the earliest and two trailing versions, to keep
         # maintainance of this file reasonable.
-        - 1.19
-        - oldstable
         - stable
+        - oldstable
         include:
         - os: linux
           platform: ubuntu-latest
