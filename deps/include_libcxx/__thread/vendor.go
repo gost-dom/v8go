@@ -4,5 +4,5 @@
 package __thread
 
 import (
-	_ "github.com/tommie/v8go/deps/include_libcxx/__thread/support"
+	_ "github.com/gost-dom/v8go/deps/include_libcxx/__thread/support"
 )

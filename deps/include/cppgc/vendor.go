@@ -4,5 +4,5 @@
 package cppgc
 
 import (
-	_ "github.com/tommie/v8go/deps/include/cppgc/internal"
+	_ "github.com/gost-dom/v8go/deps/include/cppgc/internal"
 )

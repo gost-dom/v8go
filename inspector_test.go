@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	v8 "github.com/tommie/v8go"
+	v8 "github.com/gost-dom/v8go"
 )
 
 type consoleAPIMessage struct {

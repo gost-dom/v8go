@@ -4,6 +4,6 @@
 package __locale_dir
 
 import (
-	_ "github.com/tommie/v8go/deps/include_libcxx/__locale_dir/locale_base_api"
-	_ "github.com/tommie/v8go/deps/include_libcxx/__locale_dir/support"
+	_ "github.com/gost-dom/v8go/deps/include_libcxx/__locale_dir/locale_base_api"
+	_ "github.com/gost-dom/v8go/deps/include_libcxx/__locale_dir/support"
 )
