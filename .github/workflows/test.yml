@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - master
-      - external-support
+      - rename
   pull_request:
   workflow_dispatch:
   workflow_call:
@@ -55,31 +55,30 @@ jobs:
 
     - name: Run Tests With Coverage
       run: |
-        # https://github.com/tommie/v8go/actions/runs/7363603520/job/20043211523 shows that TestCPUProfileNode can be flaky.
         go test -v -coverprofile coverage.out ./... || go test -v -coverprofile coverage.out ./...
       env:
         CGO_CXXFLAGS: "-Werror"
 
-    - name: Upload Coverage To Codecov
-      uses: codecov/codecov-action@v3
-      if: env._HAS_CODECOV_TOKEN == 'true'
-      env:
-        _HAS_CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN != '' }}
-        OS: ${{ matrix.os }}
-        ARCH: ${{ matrix.arch }}
-        PLATFORM: ${{ matrix.platform }}
-        GO: ${{ matrix.go-version }}
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
-        files: ./coverage.out
-        flags: unittests
-        fail_ci_if_error: true
-        env_vars: OS,ARCH,PLATFORM,GO
+    # - name: Upload Coverage To Codecov
+    #   uses: codecov/codecov-action@v3
+    #   if: env._HAS_CODECOV_TOKEN == 'true'
+    #   env:
+    #     _HAS_CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN != '' }}
+    #     OS: ${{ matrix.os }}
+    #     ARCH: ${{ matrix.arch }}
+    #     PLATFORM: ${{ matrix.platform }}
+    #     GO: ${{ matrix.go-version }}
+    #   with:
+    #     token: ${{ secrets.CODECOV_TOKEN }}
+    #     files: ./coverage.out
+    #     flags: unittests
+    #     fail_ci_if_error: true
+    #     env_vars: OS,ARCH,PLATFORM,GO
 
-    - name: Scan and Upload FOSSA Data
-      if: env.FOSSA_API_KEY != '' && github.ref == 'refs/heads/master'
-      run: |
-        curl https://raw.githubusercontent.com/fossas/fossa-cli/master/install.sh | sudo bash
-        fossa analyze
-      env:
-        FOSSA_API_KEY: ${{ secrets.FOSSA_API_KEY }}
+    # - name: Scan and Upload FOSSA Data
+    #   if: env.FOSSA_API_KEY != '' && github.ref == 'refs/heads/master'
+    #   run: |
+    #     curl https://raw.githubusercontent.com/fossas/fossa-cli/master/install.sh | sudo bash
+    #     fossa analyze
+    #   env:
+    #     FOSSA_API_KEY: ${{ secrets.FOSSA_API_KEY }}
