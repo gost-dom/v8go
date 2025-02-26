@@ -13,7 +13,7 @@ import (
 	"runtime"
 	"testing"
 
-	v8 "github.com/tommie/v8go"
+	v8 "github.com/gost-dom/v8go"
 )
 
 func TestValueNewBaseCases(t *testing.T) {
