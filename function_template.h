@@ -7,7 +7,7 @@
 
 namespace v8 {
 class Isolate;
-}
+}  // namespace v8
 
 typedef v8::Isolate v8Isolate;
 

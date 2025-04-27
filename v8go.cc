@@ -11,6 +11,7 @@
 #include "utils.h"
 
 #include "context-macros.h"
+#include "function_template.h"
 #include "isolate-macros.h"
 #include "template-macros.h"
 #include "template.h"
