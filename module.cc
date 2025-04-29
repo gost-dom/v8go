@@ -4,6 +4,7 @@
 #include "context-macros.h"
 #include "context.h"
 #include "isolate-macros.h"
+#include "value.h"
 
 using namespace v8;
 
@@ -46,19 +47,19 @@ v8::MaybeLocal<v8::Module> ResolveModuleCallback(
     v8::Local<v8::String> specifier,
     v8::Local<v8::FixedArray> import_attributes,
     v8::Local<v8::Module> referrer) {
-  v8Isolate* iso = context->GetIsolate();
+  v8Isolate* iso = Isolate::GetCurrent();
   int ctx_ref = context->GetEmbedderData(1).As<v8::Integer>()->Value();
   std::size_t cap = specifier->Utf8LengthV2(iso);
   char* buf = static_cast<char*>(malloc(cap));
   specifier->WriteUtf8V2(iso, buf, cap);
   m_module ref(iso, referrer);
-  m_module* mod = resolveModuleCallback(ctx_ref, buf, &ref);
-  if (mod) {
-    v8::MaybeLocal<v8::Module> ret = mod->ptr.Get(iso);
-    return ret;
+  resolveModuleCallback_return retval =
+      resolveModuleCallback(ctx_ref, buf, &ref);
+  if (retval.r1 != nullptr) {
+    iso->ThrowException(retval.r1->ptr.Get(iso));
+    return MaybeLocal<Module>();
   }
-  v8::MaybeLocal<v8::Module> res;
-  return res;
+  return retval.r0->ptr.Get(iso);
 }
 
 extern RtnError ModuleInstantiateModule(m_ctx* ctx,
