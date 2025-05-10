@@ -371,6 +371,7 @@ path. Add it with -I<path> to the command line
 # define V8_HAS_ATTRIBUTE_UNUSED (__has_attribute(unused))
 # define V8_HAS_ATTRIBUTE_USED (__has_attribute(used))
 # define V8_HAS_ATTRIBUTE_RETAIN (__has_attribute(retain))
+# define V8_HAS_ATTRIBUTE_OPTNONE (__has_attribute(optnone))
 // Support for the "preserve_most" attribute is limited:
 // - 32-bit platforms do not implement it,
 // - component builds fail because _dl_runtime_resolve clobbers registers,
@@ -497,6 +498,16 @@ path. Add it with -I<path> to the command line
 # define V8_INLINE __forceinline
 #else
 # define V8_INLINE inline
+#endif
+
+// A macro to force better inlining of calls in a statement. Don't bother for
+// debug builds.
+// Use like:
+//   V8_INLINE_STATEMENT foo = bar(); // Will force inlining the bar() call.
+#if !defined(DEBUG) && defined(__clang__) && V8_HAS_ATTRIBUTE_ALWAYS_INLINE
+# define V8_INLINE_STATEMENT [[clang::always_inline]]
+#else
+# define V8_INLINE_STATEMENT
 #endif
 
 #if V8_HAS_BUILTIN_ASSUME
@@ -783,15 +794,11 @@ V8 shared library set USING_V8_SHARED.
 #else  // V8_OS_WIN
 
 // Setup for Linux shared library export.
-#if V8_HAS_ATTRIBUTE_VISIBILITY
-# ifdef BUILDING_V8_SHARED
-#  define V8_EXPORT __attribute__ ((visibility("default")))
-# else
-#  define V8_EXPORT
-# endif
+#if V8_HAS_ATTRIBUTE_VISIBILITY && (defined(BUILDING_V8_SHARED) || USING_V8_SHARED)
+# define V8_EXPORT __attribute__((visibility("default")))
 #else
 # define V8_EXPORT
-#endif
+# endif  // V8_HAS_ATTRIBUTE_VISIBILITY && ...
 
 #endif  // V8_OS_WIN
 

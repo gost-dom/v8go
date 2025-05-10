@@ -140,7 +140,7 @@ class V8_EXPORT String : public Name {
    * Returns the number of bytes in the UTF-8 encoded
    * representation of this string.
    */
-  V8_DEPRECATE_SOON("Use Utf8LengthV2 instead.")
+  V8_DEPRECATED("Use Utf8LengthV2 instead.")
   int Utf8Length(Isolate* isolate) const;
 
   /**
@@ -200,15 +200,15 @@ class V8_EXPORT String : public Name {
   };
 
   // 16-bit character codes.
-  V8_DEPRECATE_SOON("Use WriteV2 instead.")
+  V8_DEPRECATED("Use WriteV2 instead.")
   int Write(Isolate* isolate, uint16_t* buffer, int start = 0, int length = -1,
             int options = NO_OPTIONS) const;
   // One byte characters.
-  V8_DEPRECATE_SOON("Use WriteOneByteV2 instead.")
+  V8_DEPRECATED("Use WriteOneByteV2 instead.")
   int WriteOneByte(Isolate* isolate, uint8_t* buffer, int start = 0,
                    int length = -1, int options = NO_OPTIONS) const;
   // UTF-8 encoded characters.
-  V8_DEPRECATE_SOON("Use WriteUtf8V2 instead.")
+  V8_DEPRECATED("Use WriteUtf8V2 instead.")
   int WriteUtf8(Isolate* isolate, char* buffer, int length = -1,
                 int* nchars_ref = nullptr, int options = NO_OPTIONS) const;
 
@@ -257,11 +257,14 @@ class V8_EXPORT String : public Name {
    * \param buffer The buffer into which the string will be written.
    * \param capacity The number of bytes available in the output buffer.
    * \param flags Various flags that influence the behavior of this operation.
+   * \param processed_characters_return The number of processed characters from
+   * the buffer.
    * \return The number of bytes copied to the buffer including the null
    * terminator (if written).
    */
   size_t WriteUtf8V2(Isolate* isolate, char* buffer, size_t capacity,
-                     int flags = WriteFlags::kNone) const;
+                     int flags = WriteFlags::kNone,
+                     size_t* processed_characters_return = nullptr) const;
 
   /**
    * A zero length string.
@@ -306,6 +309,37 @@ class V8_EXPORT String : public Name {
      * subclasses to control how allocated external bytes are accounted.
      */
     virtual void Unaccount(Isolate* isolate) {}
+
+    /**
+     * Returns an estimate of the memory occupied by this external string, to be
+     * used by V8 when producing a heap snapshot. If this function returns
+     * kDefaultMemoryEstimate, then V8 will estimate the external size based on
+     * the string length. This function should return only memory that is
+     * uniquely owned by this resource. If the resource has shared ownership of
+     * a secondary allocation, it can report that memory by implementing
+     * EstimateSharedMemoryUsage.
+     */
+    virtual size_t EstimateMemoryUsage() const {
+      return kDefaultMemoryEstimate;
+    }
+    static constexpr size_t kDefaultMemoryEstimate = static_cast<size_t>(-1);
+
+    class V8_EXPORT SharedMemoryUsageRecorder {
+     public:
+      /**
+       * Record that a shared allocation at the given location has the given
+       * size.
+       */
+      virtual void RecordSharedMemoryUsage(const void* location,
+                                           size_t size) = 0;
+    };
+
+    /**
+     * Estimates memory that this string resource may share with other string
+     * resources, to be used by V8 when producing a heap snapshot.
+     */
+    virtual void EstimateSharedMemoryUsage(
+        SharedMemoryUsageRecorder* recorder) const {}
 
     // Disallow copying and assigning.
     ExternalStringResourceBase(const ExternalStringResourceBase&) = delete;

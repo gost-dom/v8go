@@ -129,7 +129,9 @@ struct JitCodeEvent {
 enum JitCodeEventOptions {
   kJitCodeEventDefault = 0,
   // Generate callbacks for already existent code.
-  kJitCodeEventEnumExisting = 1
+  kJitCodeEventEnumExisting = 1,
+
+  kLastJitCodeEventOption = kJitCodeEventEnumExisting
 };
 
 /**
@@ -187,6 +189,9 @@ enum GCCallbackFlags {
 using GCCallback = void (*)(GCType type, GCCallbackFlags flags);
 
 using InterruptCallback = void (*)(Isolate* isolate, void* data);
+
+using PrintCurrentStackTraceFilterCallback =
+    bool (*)(Isolate* isolate, Local<String> script_name);
 
 /**
  * This callback is invoked when the heap size is close to the heap limit and

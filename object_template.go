@@ -79,6 +79,14 @@ func (o *ObjectTemplate) SetInternalFieldCount(fieldCount uint32) {
 	C.ObjectTemplateSetInternalFieldCount(o.ptr, C.int(fieldCount))
 }
 
+// SetAccessorProperty creates a named accessor property, i.e., a property that
+// is implemented as a function call. Arguments get and set represents the
+// getter and setter, and can both be nil.
+//
+// Note: The [ReadOnly] should not be used with a readonly property. If set is
+// nil, the property will be readonly, and passing [None] is a sensible default.
+//
+// This corresponds to ObjectTemplate::SetAccessorProperty in the C++ API.
 func (o *ObjectTemplate) SetAccessorProperty(
 	key string,
 	get *FunctionTemplate,
