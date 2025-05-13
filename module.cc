@@ -64,7 +64,7 @@ v8::MaybeLocal<v8::Module> ResolveModuleCallback(
   m_module ref(iso, referrer);
   v8goFixedArray attributes(iso, import_attributes);
   resolveModuleCallback_return retval =
-      resolveModuleCallback(ctx_ref, buf, &attributes, &ref);
+      resolveModuleCallback(ctx_ref, buf, cap, &attributes, &ref);
   if (retval.r1 != nullptr) {
     iso->ThrowException(retval.r1->ptr.Get(iso));
     return MaybeLocal<Module>();
