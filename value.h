@@ -22,6 +22,7 @@ struct m_value {
   v8::Isolate* iso;
   m_ctx* ctx;
   v8::Global<v8::Value> ptr;
+  v8::Local<v8::Value> ToLocal() { return this->ptr.Get(this->iso); }
 };
 
 typedef v8::Isolate v8Isolate;

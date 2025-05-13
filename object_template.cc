@@ -56,6 +56,78 @@ static Intercepted PropertyCallback(uint32_t index,
   return v8::Intercepted::kYes;
 }
 
+v8goPropertyCallbackInfo convertCallback(
+    v8::Isolate* iso,
+    const v8::PropertyCallbackInfo<v8::Value>& info,
+    m_ctx*& ctx) {
+  Local<Context> local_ctx = iso->GetCurrentContext();
+
+  int ctx_ref = local_ctx->GetEmbedderData(1).As<Integer>()->Value();
+  ctx = goContext(ctx_ref);
+
+  v8goPropertyCallbackInfo rtnVal;
+  rtnVal.ctx_ref = ctx_ref;
+  rtnVal.cbref = track_value(ctx, info.Data());
+  rtnVal.jsThis = track_value(ctx, info.This());
+  rtnVal.holder = track_value(ctx, info.HolderV2());
+  return rtnVal;
+}
+
+Intercepted HandleRtnVal(m_value* value,
+                         bool intercepted,
+                         m_value* errVal,
+                         const v8::PropertyCallbackInfo<v8::Value>& info) {
+  if (errVal != nullptr) {
+    v8::Isolate* iso = errVal->iso;
+    iso->ThrowException(errVal->ToLocal());
+  }
+  if (value != nullptr) {
+    // The value is "undefined" by default
+    info.GetReturnValue().Set(value->ToLocal());
+  }
+  if (intercepted) {
+    return Intercepted::kYes;
+  } else {
+    return Intercepted::kNo;
+  }
+}
+
+Intercepted GetterCallback(Local<Name> name,
+                           const v8::PropertyCallbackInfo<v8::Value>& info) {
+  Isolate* iso = info.GetIsolate();
+  ISOLATE_SCOPE(iso);
+
+  m_ctx* ctx;
+  v8goPropertyCallbackInfo goInfo = convertCallback(iso, info, ctx);
+
+  goNamedPropertyGetterCallback_return retval =
+      goNamedPropertyGetterCallback(track_value(ctx, name), goInfo);
+
+  return HandleRtnVal(retval.r0, retval.r1, retval.r2, info);
+}
+
+Intercepted EnumeratorCallback(
+    const v8::PropertyCallbackInfo<v8::Value>& info) {
+  Isolate* iso = info.GetIsolate();
+  ISOLATE_SCOPE(iso);
+
+  m_ctx* ctx;
+  v8goPropertyCallbackInfo goInfo = convertCallback(iso, info, ctx);
+
+  goNamedPropertyEnumeratorCallback_return retval =
+      goNamedPropertyEnumeratorCallback(goInfo);
+
+  return HandleRtnVal(retval.r0, retval.r1, retval.r2, info);
+}
+
+void ObjectTemplateSetNamedHandler(TemplatePtr ptr, ValuePtr callback_ref) {
+  LOCAL_TEMPLATE(ptr);
+  Local<ObjectTemplate> obj_tmpl = tmpl.As<ObjectTemplate>();
+  obj_tmpl->SetHandler(NamedPropertyHandlerConfiguration(
+      GetterCallback, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
+      callback_ref->ToLocal(), PropertyHandlerFlags::kHasNoSideEffect));
+}
+
 TemplatePtr NewObjectTemplate(v8Isolate* iso) {
   Locker locker(iso);
   Isolate::Scope isolate_scope(iso);
