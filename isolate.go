@@ -9,6 +9,7 @@ package v8go
 import "C"
 
 import (
+	"runtime/cgo"
 	"sync"
 	"unsafe"
 )
@@ -25,6 +26,7 @@ type Isolate struct {
 
 	null      *Value
 	undefined *Value
+	handles   []cgo.Handle
 }
 
 // HeapStatistics represents V8 isolate heap statistics
@@ -181,6 +183,9 @@ func (i *Isolate) GetHeapStatistics() HeapStatistics {
 func (i *Isolate) Dispose() {
 	if i.ptr == nil {
 		return
+	}
+	for _, h := range i.handles {
+		h.Delete()
 	}
 	C.IsolateDispose(i.ptr)
 	i.ptr = nil
