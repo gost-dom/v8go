@@ -10,8 +10,13 @@ import "C"
 import (
 	"errors"
 	"runtime"
+	"runtime/cgo"
 	"unsafe"
 )
+
+// NotIntercepted is the error returned by property handler callbacks when they
+// did not intercept the property.
+var NotIntercepted = errors.New("v8go: NotIntercepted")
 
 // PropertyAttribute are the attribute flags for a property on an Object.
 // Typical usage when setting an Object or TemplateObject property, and
@@ -173,3 +178,172 @@ func (o *ObjectTemplate) SetCallAsFunctionHandler(callback FunctionCallbackWithE
 		C.int(cbref),
 	)
 }
+
+type PropertyDescriptor struct{}
+
+type NamedPropertyCallback struct {
+	ctx  *Context
+	this *Object
+	// Holder marks the object in the prototype chain that has the receiver. This
+	// corresponds to `HolderV2` in the v8 API.
+	holder *Object
+}
+
+type NamedPropertyGetter interface {
+	NamedPropertyGet(property *Value, info NamedPropertyCallback) (*Value, error)
+}
+
+type NamedPropertySetter interface {
+	NamedPropertySet(property *Value, value *Value, info NamedPropertyCallback) error
+}
+
+type NamedPropertyQueryer interface {
+	NamedPropertyQuery(property *Value, info NamedPropertyCallback) (int, error)
+}
+
+type NamedPropertyDeleter interface {
+	NamedPropertyDelete(property *Value, info NamedPropertyCallback) (success bool, err error)
+}
+
+type NamedPropertyEnumeratorer interface {
+	NamedPropertyEnumerator(info NamedPropertyCallback) (names []*Value, err error)
+}
+
+type NamedPropertyDefinerer interface {
+	NamedPropertyDefiner(property *Value, desc *PropertyDescriptor, info NamedPropertyCallback) error
+}
+
+type NamedPropertyDescriptorer interface {
+	NamedPropertyDescriptor(property *Value, info NamedPropertyCallback) (*Value, error)
+}
+
+// SetNamedHandler allows the embedder to calculate the properties at runtime,
+// for example where the embedder is exposing a map/dictionary type to
+// JavaScript. The caller must provide a type implementing
+// [NamedPropertyGetter], but it can optionally also support the following types
+//
+// - [NamedPropertySetter] to handle when a property is assigned in JavaScript
+// - [NamedPropertyQueryer] to handle when property details are inspected
+// - [NamedPropertyDeleter] to handle when a property is deleted
+// - [NamedPropertyEnumeratorer] to return the names of the properties
+// - [NamedPropertyDefiner] to handler Object.defineProperty() calls
+// - [NamedPropertyDescriptor] to generate a PropertyDescriptor for a property
+//
+// With the exception of [NamedPropertyEnumerator] the methods accept a property
+// of type [*Value]. The name can be either a string or a [*Symbol]. If the
+// embedder does want to handle the callback, it must communicate this back to
+// V8 by returning an [ErrNotIntercepted]. When thie is returned, the function
+// must not produce any side effects.
+func (t *ObjectTemplate) SetNamedHandler(handler NamedPropertyGetter) {
+	if handler == nil {
+		panic("nil property argument not supported")
+	}
+	handle := cgo.NewHandle(handler)
+	cb_ref := NewValueExternalHandle(t.iso, handle)
+	C.ObjectTemplateSetNamedHandler(t.ptr, cb_ref.ptr)
+}
+
+//export goNamedPropertyGetterCallback
+func goNamedPropertyGetterCallback(property C.ValuePtr, info C.v8goPropertyCallbackInfo) (retVal C.ValuePtr, intercepted bool, rtnerr C.ValuePtr) {
+	cbref := Value{ptr: info.cbref}
+	ctx := getContext(int(info.ctx_ref))
+	// Should *ALWAYS* be ok for the getter; it's required.
+	cb, ok := cbref.ExternalHandle().Value().(NamedPropertyGetter)
+	if !ok {
+		return nil, false, nil
+	}
+	res, err := cb.NamedPropertyGet(&Value{ptr: property}, NamedPropertyCallback{
+		ctx, &Object{&Value{ctx: ctx, ptr: info.jsThis}}, &Object{&Value{ctx: ctx, ptr: info.holder}},
+	})
+	intercepted = true
+	if err == NotIntercepted {
+		err = nil
+		intercepted = false
+	}
+	if err != nil {
+		if verr, ok := err.(ValueError); ok {
+			rtnerr = verr.value().ptr
+		} else {
+			errv, err := NewValue(ctx.iso, err.Error())
+			if err != nil {
+				panic(err)
+			}
+			rtnerr = errv.ptr
+		}
+	}
+	if res != nil {
+		retVal = res.ptr
+	}
+	return
+}
+
+// func goNamedPropertySetterCallback()
+// func goNamedPropertyQueryCallback()
+// func goNamedPropertyDeleteCallback()
+// func goNamedPropertyEnumeratorCallback()
+
+//export goNamedPropertyEnumeratorCallback
+func goNamedPropertyEnumeratorCallback(info C.v8goPropertyCallbackInfo) (retVal C.ValuePtr, intercepted bool, rtnerr C.ValuePtr) {
+	cbref := Value{ptr: info.cbref}
+	ctx := getContext(int(info.ctx_ref))
+	// Should *ALWAYS* be ok for the getter; it's required.
+	cb, ok := cbref.ExternalHandle().Value().(NamedPropertyEnumeratorer)
+	if !ok {
+		return nil, false, nil
+	}
+	res, err := cb.NamedPropertyEnumerator(NamedPropertyCallback{
+		ctx, &Object{&Value{ctx: ctx, ptr: info.jsThis}}, &Object{&Value{ctx: ctx, ptr: info.holder}},
+	})
+	intercepted = true
+	if err == NotIntercepted {
+		err = nil
+		intercepted = false
+	}
+	var retValVal *Value
+	if err == nil {
+		retValVal, err = toArray(ctx, res...)
+	}
+	if err != nil {
+		if verr, ok := err.(ValueError); ok {
+			rtnerr = verr.value().ptr
+		} else {
+			errv, err := NewValue(ctx.iso, err.Error())
+			if err != nil {
+				panic(err)
+			}
+			rtnerr = errv.ptr
+		}
+	}
+	if res != nil {
+		retVal = retValVal.ptr
+	}
+	return
+}
+
+func toArray(ctx *Context, values ...*Value) (*Value, error) {
+	// Total hack, v8go doesn't expose Array values, so we polyfill the engine
+	v, err := ctx.Global().Get("Array")
+	if err != nil {
+		return nil, err
+	}
+	obj, err := v.AsObject()
+	if err != nil {
+		return nil, err
+	}
+	of, err := obj.Get("of")
+	if err != nil {
+		return nil, err
+	}
+	fn, err := of.AsFunction()
+	if err != nil {
+		return nil, err
+	}
+	args := make([]Valuer, len(values))
+	for i, v := range values {
+		args[i] = v
+	}
+	return fn.Call(ctx.Global(), args...)
+}
+
+// func goNamedPropertyDefinerCallback()
+// func goNamedPropertyDescriptorCallback()
