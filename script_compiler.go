@@ -10,7 +10,10 @@ package v8go
 // #include "script_compiler.h"
 import "C"
 
-import "unsafe"
+import (
+	"fmt"
+	"unsafe"
+)
 
 type CompileMode C.int
 
@@ -29,9 +32,12 @@ func CompileModule(iso *Isolate, source, origin string) (*Module, error) {
 	cOrigin := C.CString(origin)
 	defer C.free(unsafe.Pointer(cSource))
 	defer C.free(unsafe.Pointer(cOrigin))
-
+	ptr := C.ScriptCompilerCompileModule(iso.ptr, cSource, cOrigin)
+	if ptr == nil {
+		return nil, fmt.Errorf("Error compiling module: %s", origin)
+	}
 	return &Module{
 		iso: iso.ptr,
-		ptr: C.ScriptCompilerCompileModule(iso.ptr, cSource, cOrigin),
+		ptr: ptr,
 	}, nil
 }
