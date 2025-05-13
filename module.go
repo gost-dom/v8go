@@ -86,12 +86,12 @@ func (m Module) Evaluate(ctx *Context) (*Value, error) {
 //export resolveModuleCallback
 func resolveModuleCallback(
 	ctxref int,
-	buf *C.char,
+	buf *C.char, buf_len C.int,
 	importAttributes *C.v8goFixedArray,
 	referrer *C.m_module,
 ) (*C.m_module, C.ValuePtr) {
 	defer C.free(unsafe.Pointer(buf))
-	spec := C.GoString(buf)
+	spec := C.GoStringN(buf, buf_len)
 
 	ctx := getContext(ctxref)
 	ref := &Module{iso: ctx.Isolate().ptr, ptr: referrer}
