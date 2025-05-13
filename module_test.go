@@ -55,6 +55,22 @@ func TestScriptCompilerModuleWithoutImports(t *testing.T) {
 	}
 }
 
+func TestScriptCompilerSyntaxError(t *testing.T) {
+	t.Parallel()
+
+	iso := v8.NewIsolate()
+	defer iso.Dispose()
+
+	ctx := v8.NewContext()
+	defer ctx.Close()
+
+	_, err := v8.CompileModule(iso, `{ syntax error`, "")
+	if err == nil {
+		t.Error("Expected an error returned compiling a syntax error")
+	}
+
+}
+
 func TestScriptCompilerMissingModule(t *testing.T) {
 	t.Parallel()
 
@@ -202,7 +218,7 @@ func TestSameModuleImportedMultipleTimes(t *testing.T) {
 	// res, err := obj.Get("result")
 	// fatalIf(t, err)
 	// t.Log("Val", res.String())
-	t.Error("ping")
+	// t.Error("ping")
 }
 
 type LoggingResolver struct {
