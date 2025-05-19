@@ -24,16 +24,16 @@ var NotIntercepted = errors.New("v8go: NotIntercepted")
 type PropertyAttribute uint8
 
 // PropertyCallbackInfo is passed when intercepting a named or indexed property.
-type PropertyCallbackInfo struct {
-	ctx  *Context
-	args []*Value
-	this *Object
-	// Holder marks the object in the prototype chain that has the receiver. This
-	// corresponds to `HolderV2` in the v8 API.
-	holder *Object
-	// True if the intercepted function should throw if an error occurs. Usually, true corresponds to ‘'use strict’`.
-	interceptOnError bool
-}
+// type PropertyCallbackInfo struct {
+// 	ctx  *Context
+// 	args []*Value
+// 	this *Object
+// 	// Holder marks the object in the prototype chain that has the receiver. This
+// 	// corresponds to `HolderV2` in the v8 API.
+// 	holder *Object
+// 	// True if the intercepted function should throw if an error occurs. Usually, true corresponds to ‘'use strict’`.
+// 	interceptOnError bool
+// }
 
 const (
 	// None.
@@ -135,40 +135,48 @@ func (o *ObjectTemplate) SetIndexedHandler(callback FunctionCallbackWithError) {
 
 type PropertyDescriptor struct{}
 
-type NamedPropertyCallback struct {
-	ctx  *Context
-	this *Object
-	// Holder marks the object in the prototype chain that has the receiver. This
-	// corresponds to `HolderV2` in the v8 API.
+type PropertyCallbackInfo struct {
+	ctx    *Context
+	this   *Object
 	holder *Object
 }
 
+// This returns the JavaScript object on which a property was accessed
+func (c PropertyCallbackInfo) Context() *Context { return c.ctx }
+
+// This returns the JavaScript object on which a property was accessed
+func (c PropertyCallbackInfo) This() *Object { return c.this }
+
+// Holder returns the object in the prototype chain where the property handler
+// was defined.
+func (c PropertyCallbackInfo) Holder() *Object { return c.holder }
+
 type NamedPropertyGetter interface {
-	NamedPropertyGet(property *Value, info NamedPropertyCallback) (*Value, error)
+	NamedPropertyGet(property *Value, info PropertyCallbackInfo) (*Value, error)
 }
 
 type NamedPropertySetter interface {
-	NamedPropertySet(property *Value, value *Value, info NamedPropertyCallback) error
+	NamedPropertySet(property *Value, value *Value, info PropertyCallbackInfo) error
 }
 
 type NamedPropertyQueryer interface {
-	NamedPropertyQuery(property *Value, info NamedPropertyCallback) (int, error)
+	NamedPropertyQuery(property *Value, info PropertyCallbackInfo) (int, error)
 }
 
 type NamedPropertyDeleter interface {
-	NamedPropertyDelete(property *Value, info NamedPropertyCallback) (success bool, err error)
+	NamedPropertyDelete(property *Value, info PropertyCallbackInfo) (success bool, err error)
 }
 
 type NamedPropertyEnumeratorer interface {
-	NamedPropertyEnumerator(info NamedPropertyCallback) (names []*Value, err error)
+	NamedPropertyEnumerator(info PropertyCallbackInfo) (names []*Value, err error)
 }
 
 type NamedPropertyDefinerer interface {
-	NamedPropertyDefiner(property *Value, desc *PropertyDescriptor, info NamedPropertyCallback) error
+	NamedPropertyDefiner(property *Value, desc *PropertyDescriptor, info PropertyCallbackInfo) error
 }
 
 type NamedPropertyDescriptorer interface {
-	NamedPropertyDescriptor(property *Value, info NamedPropertyCallback) (*Value, error)
+	NamedPropertyDescriptor(property *Value, info PropertyCallbackInfo) (*Value, error)
 }
 
 // SetNamedHandler allows the embedder to calculate the properties at runtime,
@@ -199,18 +207,19 @@ func (t *ObjectTemplate) SetNamedHandler(handler NamedPropertyGetter) {
 
 //export goNamedPropertyGetterCallback
 func goNamedPropertyGetterCallback(property C.ValuePtr, info C.v8goPropertyCallbackInfo) (retVal C.ValuePtr, intercepted bool, rtnerr C.ValuePtr) {
+	name := &Value{ptr: property}
 	cbref := Value{ptr: info.cbref}
 	ctx := getContext(int(info.ctx_ref))
-	// Should *ALWAYS* be ok for the getter; it's required.
-	cb, ok := cbref.ExternalHandle().Value().(NamedPropertyGetter)
+	handle := cbref.ExternalHandle()
+	cb, ok := handle.Value().(NamedPropertyGetter)
 	if !ok {
-		return nil, false, nil
+		panic("Value is not a property getter")
 	}
-	res, err := cb.NamedPropertyGet(&Value{ptr: property}, NamedPropertyCallback{
+	res, err := cb.NamedPropertyGet(name, PropertyCallbackInfo{
 		ctx, &Object{&Value{ctx: ctx, ptr: info.jsThis}}, &Object{&Value{ctx: ctx, ptr: info.holder}},
 	})
 	intercepted = true
-	if err == NotIntercepted {
+	if errors.Is(err, NotIntercepted) {
 		err = nil
 		intercepted = false
 	}
@@ -240,12 +249,11 @@ func goNamedPropertyGetterCallback(property C.ValuePtr, info C.v8goPropertyCallb
 func goNamedPropertyEnumeratorCallback(info C.v8goPropertyCallbackInfo) (retVal C.ValuePtr, intercepted bool, rtnerr C.ValuePtr) {
 	cbref := Value{ptr: info.cbref}
 	ctx := getContext(int(info.ctx_ref))
-	// Should *ALWAYS* be ok for the getter; it's required.
 	cb, ok := cbref.ExternalHandle().Value().(NamedPropertyEnumeratorer)
 	if !ok {
 		return nil, false, nil
 	}
-	res, err := cb.NamedPropertyEnumerator(NamedPropertyCallback{
+	res, err := cb.NamedPropertyEnumerator(PropertyCallbackInfo{
 		ctx, &Object{&Value{ctx: ctx, ptr: info.jsThis}}, &Object{&Value{ctx: ctx, ptr: info.holder}},
 	})
 	intercepted = true
@@ -276,27 +284,21 @@ func goNamedPropertyEnumeratorCallback(info C.v8goPropertyCallbackInfo) (retVal 
 
 func toArray(ctx *Context, values ...*Value) (*Value, error) {
 	// Total hack, v8go doesn't expose Array values, so we polyfill the engine
-	v, err := ctx.Global().Get("Array")
-	if err != nil {
-		return nil, err
+	var err error
+	if v, err := ctx.Global().Get("Array"); err == nil {
+		if obj, err := v.AsObject(); err == nil {
+			if of, err := obj.Get("of"); err == nil {
+				if fn, err := of.AsFunction(); err == nil {
+					args := make([]Valuer, len(values))
+					for i, v := range values {
+						args[i] = v
+					}
+					return fn.Call(ctx.Global(), args...)
+				}
+			}
+		}
 	}
-	obj, err := v.AsObject()
-	if err != nil {
-		return nil, err
-	}
-	of, err := obj.Get("of")
-	if err != nil {
-		return nil, err
-	}
-	fn, err := of.AsFunction()
-	if err != nil {
-		return nil, err
-	}
-	args := make([]Valuer, len(values))
-	for i, v := range values {
-		args[i] = v
-	}
-	return fn.Call(ctx.Global(), args...)
+	return nil, err
 }
 
 // func goNamedPropertyDefinerCallback()
