@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Add support for `FunctionTemplate.Inherit` to set up prototype inheritance.
+- Add support for `Isolate.SetPromiseRejectedCallback` to get notifications of rejected promises.
 
 ### Changed
 
