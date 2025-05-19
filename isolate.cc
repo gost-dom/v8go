@@ -7,6 +7,7 @@
 
 #include "_cgo_export.h"
 #include "context.h"
+#include "isolate-macros.h"
 #include "isolate.h"
 #include "libplatform/libplatform.h"
 
