@@ -87,10 +87,10 @@ type Isolate struct {
 	cbMutex sync.RWMutex
 	cbSeq   int
 	cbs     map[int]FunctionCallbackWithError
+	handles []cgo.Handle
 
 	null      *Value
 	undefined *Value
-	handles   []cgo.Handle
 }
 
 // HeapStatistics represents V8 isolate heap statistics
@@ -298,7 +298,7 @@ func goRejectedPromiseCallback(ctxref int, handle unsafe.Pointer, event PromiseR
 		msg := PromiseRejectMessage{
 			Context: getContext(ctxref),
 			Promise: p,
-			Event: event,
+			Event:   event,
 		}
 		if value != nil {
 			msg.Value = &Value{ptr: value}
