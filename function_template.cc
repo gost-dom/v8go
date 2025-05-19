@@ -43,7 +43,7 @@ void FunctionTemplateCallback(const v8::FunctionCallbackInfo<v8::Value>& info) {
   if (retval.r1 != nullptr) {
     iso->ThrowException(retval.r1->ptr.Get(iso));
   } else if (retval.r0 != nullptr) {
-    info.GetReturnValue().Set(retval.r0->ptr.Get(iso));
+    info.GetReturnValue().Set(retval.r0->ToLocal());
   } else {
     info.GetReturnValue().SetUndefined();
   }
