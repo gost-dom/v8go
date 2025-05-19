@@ -21,7 +21,6 @@ typedef v8Isolate* IsolatePtr;
 typedef struct m_value m_value;
 typedef m_value* ValuePtr;
 
-
 typedef struct {
   size_t total_heap_size;
   size_t total_heap_size_executable;
@@ -40,6 +39,7 @@ extern IsolatePtr NewIsolate();
 extern void IsolatePerformMicrotaskCheckpoint(IsolatePtr ptr);
 extern void IsolateDispose(IsolatePtr ptr);
 extern void IsolateTerminateExecution(IsolatePtr ptr);
+extern void IsolateSetPromiseRejectedCallback(IsolatePtr iso, void* handle);
 extern int IsolateIsExecutionTerminating(IsolatePtr ptr);
 extern IsolateHStatistics IsolationGetHeapStatistics(IsolatePtr ptr);
 
