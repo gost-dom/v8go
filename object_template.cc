@@ -57,9 +57,10 @@ static Intercepted PropertyCallback(uint32_t index,
   return v8::Intercepted::kYes;
 }
 
+template <class T>
 v8goPropertyCallbackInfo convertCallback(
     v8::Isolate* iso,
-    const v8::PropertyCallbackInfo<v8::Value>& info,
+    const v8::PropertyCallbackInfo<T>& info,
     m_ctx*& ctx) {
   Local<Context> local_ctx = iso->GetCurrentContext();
 
@@ -74,17 +75,17 @@ v8goPropertyCallbackInfo convertCallback(
   return rtnVal;
 }
 
+template <class T>
 Intercepted HandleRtnVal(m_value* value,
                          bool intercepted,
                          m_value* errVal,
-                         const v8::PropertyCallbackInfo<v8::Value>& info) {
+                         const v8::PropertyCallbackInfo<T>& info) {
+  Isolate* iso = info.GetIsolate();
   if (errVal != nullptr) {
-    v8::Isolate* iso = errVal->iso;
     iso->ThrowException(errVal->ToLocal());
   }
   if (value != nullptr) {
-    // The value is "undefined" by default
-    info.GetReturnValue().Set(value->ToLocal());
+    info.GetReturnValue().Set(value->ToLocal().As<T>());
   }
   if (intercepted) {
     return Intercepted::kYes;
@@ -104,11 +105,10 @@ Intercepted GetterCallback(Local<Name> name,
   goNamedPropertyGetterCallback_return retval =
       goNamedPropertyGetterCallback(track_value(ctx, name), goInfo);
 
-  return HandleRtnVal(retval.r0, retval.r1, retval.r2, info);
+  return HandleRtnVal<Value>(retval.r0, retval.r1, retval.r2, info);
 }
 
-Intercepted EnumeratorCallback(
-    const v8::PropertyCallbackInfo<v8::Value>& info) {
+void EnumeratorCallback(const v8::PropertyCallbackInfo<v8::Array>& info) {
   Isolate* iso = info.GetIsolate();
   ISOLATE_SCOPE(iso);
 
@@ -118,15 +118,16 @@ Intercepted EnumeratorCallback(
   goNamedPropertyEnumeratorCallback_return retval =
       goNamedPropertyEnumeratorCallback(goInfo);
 
-  return HandleRtnVal(retval.r0, retval.r1, retval.r2, info);
+  HandleRtnVal<v8::Array>(retval.r0, retval.r1, retval.r2, info);
 }
 
 void ObjectTemplateSetNamedHandler(TemplatePtr ptr, ValuePtr callback_ref) {
   LOCAL_TEMPLATE(ptr);
   Local<ObjectTemplate> obj_tmpl = tmpl.As<ObjectTemplate>();
   obj_tmpl->SetHandler(NamedPropertyHandlerConfiguration(
-      GetterCallback, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
-      callback_ref->ToLocal(), PropertyHandlerFlags::kHasNoSideEffect));
+      GetterCallback, nullptr, nullptr, nullptr, EnumeratorCallback, nullptr,
+      nullptr, callback_ref->ToLocal(),
+      PropertyHandlerFlags::kHasNoSideEffect));
 }
 
 TemplatePtr NewObjectTemplate(v8Isolate* iso) {

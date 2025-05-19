@@ -26,7 +26,10 @@ struct m_value {
   // created by NewValueGo. It is the cgo.Handle in the External, deleted
   // when V8 collects it, or the Isolate is disposed.
   uintptr_t go_handle = 0;
+  // ToLocal returns a Local value that can be stack-scoped. A valid HandleScope
+  // must exist on the stack before calling this.
   v8::Local<v8::Value> ToLocal() { return this->ptr.Get(this->iso); }
+  bool IsEmpty() { return this->ptr.IsEmpty(); }
 };
 
 typedef v8::Isolate v8Isolate;
