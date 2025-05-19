@@ -22,7 +22,10 @@ struct m_value {
   v8::Isolate* iso;
   m_ctx* ctx;
   v8::Global<v8::Value> ptr;
+  // ToLocal returns a Local value that can be stack-scoped. A valid HandleScope
+  // must exist on the stack before calling this.
   v8::Local<v8::Value> ToLocal() { return this->ptr.Get(this->iso); }
+  bool IsEmpty() { return this->ptr.IsEmpty(); }
 };
 
 typedef v8::Isolate v8Isolate;
