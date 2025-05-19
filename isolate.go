@@ -56,13 +56,13 @@ type Isolate struct {
 	cbMutex sync.RWMutex
 	cbSeq   int
 	cbs     map[int]FunctionCallbackWithError
+	handles []cgo.Handle
 
 	// promiseRejectedCallback is called from goPromiseRejectedCallback.
 	promiseRejectedCallback PromiseRejectedCallback
 
 	null      *Value
 	undefined *Value
-	handles   []cgo.Handle
 }
 
 // HeapStatistics represents V8 isolate heap statistics
@@ -329,6 +329,28 @@ func (i *Isolate) getCallback(ref int) FunctionCallbackWithError {
 	i.cbMutex.RLock()
 	defer i.cbMutex.RUnlock()
 	return i.cbs[ref]
+}
+
+//export goRejectedPromiseCallback
+func goRejectedPromiseCallback(
+	ctxref int,
+	handle unsafe.Pointer,
+	event PromiseRejectEvent,
+	promise C.ValuePtr,
+	value C.ValuePtr,
+) {
+	if p, err := (&Value{ptr: promise}).AsPromise(); err == nil {
+		msg := PromiseRejectMessage{
+			Context: getContext(ctxref),
+			Promise: p,
+			Event:   event,
+		}
+		if value != nil {
+			msg.Value = &Value{ptr: value}
+		}
+		cb := (cgo.Handle)(handle).Value().(PromiseRejectedCallback)
+		cb(msg)
+	}
 }
 
 // PromiseRejectMessage is passed to a [PromiseRejectedCallback]. The fields
