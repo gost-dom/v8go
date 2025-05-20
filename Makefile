@@ -1,8 +1,11 @@
+update-all: fetch update-auto-updater update-module-rename update-typeof update-developer-docs update-esm update-handlers update-readme
+	git co upstream/master
+	git co -b tmp-merge
+	git merge rename-module-to-gost value-typeof
+
 fetch:
 	git fetch origin
 	git fetch upstream
-
-update-all: fetch update-auto-updater update-module-rename update-typeof update-external-support update-developer-docs update-esm-support readme
 
 update-auto-updater:
 	git co auto-updater
@@ -23,7 +26,7 @@ update-typeof:
 	git push -f
 
 update-externa-support:
-	git co external-support
+	git co support-for-embedded-objects
 	git pull
 	git rebase upstream/master
 	git push -f
@@ -34,8 +37,14 @@ update-developer-docs:
 	git rebase upstream/master
 	git push -f
 
-update-esm-support:
-	git co feat/experimental-support-rebased
+update-esm: update-external-support 
+	git co update/esm
+	git pull
+	git rebase support-for-embedded-objects
+	git push -f
+
+update-handlers:
+	git co update/handler-support
 	git pull
 	git rebase upstream/master
 	git push -f
