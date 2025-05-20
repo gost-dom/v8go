@@ -1,13 +1,24 @@
 # Execute JavaScript from Go
 
+> [!WARNING]
+>
+> Do not base work off this fork; it will be rebased. Base work off tommie's
+> fork.
+
 This is a fork of https://github.com/tommie/v8go, which is a fork of
 https://github.com/rogchap/v8go at v0.9.0.
 
 The purpose of this add support for features in v8 that are not yet accessible
-in v8go.
+in v8go, but required for [Gost-DOM](https://github.com/gost-dom/browser)
 
-Those features are added to support my other project, create a headless browser
-with a working DOM implementation in Go: https://github.com/stroiman/go-dom
+Features added here (some may have been merged to tommie's branch already)
+- Support for
+  - `FunctionTemplate::Inherit`
+  - `FunctionTemplate::InstanceTemplate()` 
+  - `FunctionTemplate::PrototypeTemplate()`
+  - `Object::SetPrototype` / `Object::GetPrototype`
+  - `ObjectTemplate::SetAccessorProperty`
+- Store pointers or cgo handles as `external` values on a v8 object.
 
 Original readme from tommie/v8go follows
 
