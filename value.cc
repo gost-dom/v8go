@@ -267,6 +267,17 @@ uintptr_t ValueToGo(ValuePtr ptr) {
   return (uintptr_t)value.As<External>()->Value(kExternalPointerTypeTagDefault);
 }
 
+ValuePtr NewValueExternal(IsolatePtr iso, void* v) {
+  ISOLATE_SCOPE_INTERNAL_CONTEXT(iso);
+  m_value* val = new m_value;
+  val->id = 0;
+  val->iso = iso;
+  val->ctx = ctx;
+  val->ptr =
+      Global<Value>(iso, External::New(iso, v, kExternalPointerTypeTagDefault));
+  return tracked_value(ctx, val);
+}
+
 const uint32_t* ValueToArrayIndex(ValuePtr ptr) {
   LOCAL_VALUE(ptr);
   Local<Uint32> array_index;
@@ -277,6 +288,11 @@ const uint32_t* ValueToArrayIndex(ValuePtr ptr) {
   uint32_t* idx = (uint32_t*)malloc(sizeof(uint32_t));
   *idx = array_index->Value();
   return idx;
+}
+
+void* ValueToExternal(ValuePtr ptr) {
+  LOCAL_VALUE(ptr);
+  return value.As<External>()->Value(kExternalPointerTypeTagDefault);
 }
 
 int ValueToBoolean(ValuePtr ptr) {
