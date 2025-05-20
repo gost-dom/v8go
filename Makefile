@@ -1,15 +1,19 @@
-update-all: # fetch update-strict-equals update-auto-updater update-module-rename update-typeof update-developer-docs update-esm update-handlers update-readme
+update-all: update-handlers # fetch update-strict-equals update-auto-updater update-module-rename update-typeof update-developer-docs update-esm update-readme
 	git co upstream/master
 	git merge --rerere-autoupdate --no-edit \
 		auto-updater \
-		update/handler-support \
+		update/handler-support
+	git merge --rerere-autoupdate --no-edit \
 		update/esm || ./check-rerere
 	git merge --rerere-autoupdate --no-edit \
-		value-typeof  || ./check-rerere
+		value-typeof || ./check-rerere
 	git merge --rerere-autoupdate --no-edit \
 		add-value-strict-equals || ./check-rerere
+	git merge --rerere-autoupdate --no-edit \
+		rename-module-to-gost || ./check-rerere
+	sed -i "" 's/tommie/gost-dom/g' *_test.go
 	go test
-	# rename-module-to-gost
+	git commit -a --amend --no-edit
 
 fetch:
 	git fetch origin
