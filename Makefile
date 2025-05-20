@@ -1,12 +1,15 @@
-update-all: update-strict-equals # fetch update-auto-updater update-module-rename update-typeof update-developer-docs update-esm update-handlers update-readme
+update-all: # fetch update-strict-equals update-auto-updater update-module-rename update-typeof update-developer-docs update-esm update-handlers update-readme
 	git co upstream/master
-	git merge \
-		rename-module-to-gost \
-		value-typeof \
-		update/esm \
+	git merge --rerere-autoupdate --no-edit \
+		auto-updater \
 		update/handler-support \
-		add-value-strict-equals
+		update/esm || ./check-rerere
+	git merge --rerere-autoupdate --no-edit \
+		value-typeof  || ./check-rerere
+	git merge --rerere-autoupdate --no-edit \
+		add-value-strict-equals || ./check-rerere
 	go test
+	# rename-module-to-gost
 
 fetch:
 	git fetch origin
