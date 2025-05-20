@@ -1,0 +1,7 @@
+#!/bin/sh
+if [[ $(git rerere diff) ]]
+then
+    $(exit 1)
+else
+    git commit --no-edit
+fi
