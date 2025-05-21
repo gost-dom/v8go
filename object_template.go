@@ -58,7 +58,7 @@ func (o *ObjectTemplate) NewInstance(ctx *Context) (*Object, error) {
 
 	rtn := C.ObjectTemplateNewInstance(o.ptr, ctx.ptr)
 	runtime.KeepAlive(o)
-	return objectResult(ctx, rtn)
+	return objectResult(ctx.iso, rtn)
 }
 
 // SetInternalFieldCount sets the number of internal fields that instances of this

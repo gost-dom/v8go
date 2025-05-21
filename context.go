@@ -97,7 +97,7 @@ func (c *Context) RunScript(source string, origin string) (*Value, error) {
 	defer C.free(unsafe.Pointer(cOrigin))
 
 	rtn := C.RunScript(c.ptr, cSource, cOrigin)
-	return valueResult(c, rtn)
+	return valueResult(c.iso, rtn)
 }
 
 // Global returns the global proxy object.
@@ -109,7 +109,7 @@ func (c *Context) RunScript(source string, origin string) (*Value, error) {
 // global proxy object.
 func (c *Context) Global() *Object {
 	valPtr := C.ContextGlobal(c.ptr)
-	v := &Value{valPtr, c}
+	v := &Value{valPtr, c.iso}
 	return &Object{v}
 }
 
@@ -167,16 +167,16 @@ func goContext(ref int) C.ContextPtr {
 	return ctx.ptr
 }
 
-func valueResult(ctx *Context, rtn C.RtnValue) (*Value, error) {
+func valueResult(iso *Isolate, rtn C.RtnValue) (*Value, error) {
 	if rtn.value == nil {
 		return nil, newJSError(rtn.error)
 	}
-	return &Value{rtn.value, ctx}, nil
+	return &Value{rtn.value, iso}, nil
 }
 
-func objectResult(ctx *Context, rtn C.RtnValue) (*Object, error) {
+func objectResult(iso *Isolate, rtn C.RtnValue) (*Object, error) {
 	if rtn.value == nil {
 		return nil, newJSError(rtn.error)
 	}
-	return &Object{&Value{rtn.value, ctx}}, nil
+	return &Object{&Value{rtn.value, iso}}, nil
 }

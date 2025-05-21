@@ -18,7 +18,7 @@ import (
 // Value represents all Javascript values and objects
 type Value struct {
 	ptr C.ValuePtr
-	ctx *Context
+	iso *Isolate
 }
 
 // Valuer is an interface that reperesents anything that extends from a Value
@@ -32,15 +32,11 @@ func (v *Value) value() *Value {
 }
 
 func newValueNull(iso *Isolate) *Value {
-	return &Value{
-		ptr: C.NewValueNull(iso.ptr),
-	}
+	return &Value{C.NewValueNull(iso.ptr), iso}
 }
 
 func newValueUndefined(iso *Isolate) *Value {
-	return &Value{
-		ptr: C.NewValueUndefined(iso.ptr),
-	}
+	return &Value{C.NewValueUndefined(iso.ptr), iso}
 }
 
 // Undefined returns the `undefined` JS value
@@ -76,45 +72,29 @@ func NewValue(iso *Isolate, val interface{}) (*Value, error) {
 		rtn := C.NewValueString(iso.ptr, cstr, C.int(len(v)))
 		return valueResult(nil, rtn)
 	case int32:
-		rtnVal = &Value{
-			ptr: C.NewValueInteger(iso.ptr, C.int(v)),
-		}
+		rtnVal = &Value{C.NewValueInteger(iso.ptr, C.int(v)), iso}
 	case uint32:
-		rtnVal = &Value{
-			ptr: C.NewValueIntegerFromUnsigned(iso.ptr, C.uint(v)),
-		}
+		rtnVal = &Value{C.NewValueIntegerFromUnsigned(iso.ptr, C.uint(v)), iso}
 	case int64:
-		rtnVal = &Value{
-			ptr: C.NewValueBigInt(iso.ptr, C.int64_t(v)),
-		}
+		rtnVal = &Value{C.NewValueBigInt(iso.ptr, C.int64_t(v)), iso}
 	case uint64:
-		rtnVal = &Value{
-			ptr: C.NewValueBigIntFromUnsigned(iso.ptr, C.uint64_t(v)),
-		}
+		rtnVal = &Value{C.NewValueBigIntFromUnsigned(iso.ptr, C.uint64_t(v)), iso}
 	case bool:
 		var b int
 		if v {
 			b = 1
 		}
-		rtnVal = &Value{
-			ptr: C.NewValueBoolean(iso.ptr, C.int(b)),
-		}
+		rtnVal = &Value{C.NewValueBoolean(iso.ptr, C.int(b)), iso}
 	case float64:
-		rtnVal = &Value{
-			ptr: C.NewValueNumber(iso.ptr, C.double(v)),
-		}
+		rtnVal = &Value{C.NewValueNumber(iso.ptr, C.double(v)), iso}
 	case *big.Int:
 		if v.IsInt64() {
-			rtnVal = &Value{
-				ptr: C.NewValueBigInt(iso.ptr, C.int64_t(v.Int64())),
-			}
+			rtnVal = &Value{C.NewValueBigInt(iso.ptr, C.int64_t(v.Int64())), iso}
 			break
 		}
 
 		if v.IsUint64() {
-			rtnVal = &Value{
-				ptr: C.NewValueBigIntFromUnsigned(iso.ptr, C.uint64_t(v.Uint64())),
-			}
+			rtnVal = &Value{C.NewValueBigIntFromUnsigned(iso.ptr, C.uint64_t(v.Uint64())), iso}
 			break
 		}
 
@@ -229,7 +209,7 @@ func (v *Value) Number() float64 {
 // To just cast this value as an Object use AsObject() instead.
 func (v *Value) Object() *Object {
 	rtn := C.ValueToObject(v.ptr)
-	obj, err := objectResult(v.ctx, rtn)
+	obj, err := objectResult(v.iso, rtn)
 	if err != nil {
 		panic(err) // TODO: Return error
 	}
@@ -314,7 +294,7 @@ func (v *Value) IsFunction() bool {
 
 // IsObject returns true if this value is an object.
 func (v *Value) IsObject() bool {
-	return v.ctx != nil && C.ValueIsObject(v.ptr) != 0
+	return C.ValueIsObject(v.ptr) != 0
 }
 
 // IsBigInt returns true if this value is a bigint.
@@ -337,8 +317,7 @@ func (v *Value) IsNumber() bool {
 
 // IsExternal returns true if this value is an `External` object.
 func (v *Value) IsExternal() bool {
-	// TODO(rogchap): requires test case
-	return v.ctx != nil && C.ValueIsExternal(v.ptr) != 0
+	return C.ValueIsExternal(v.ptr) != 0
 }
 
 // IsInt32 returns true if this value is a 32-bit signed integer.

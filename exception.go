@@ -61,7 +61,7 @@ func newExceptionError(iso *Isolate, typ C.ErrorTypeIndex, msg string) *Exceptio
 	if eptr == nil {
 		panic(fmt.Errorf("invalid error type index: %d", typ))
 	}
-	return &Exception{&Value{ptr: eptr}}
+	return &Exception{&Value{eptr, iso}}
 }
 
 // An Exception is a JavaScript exception.

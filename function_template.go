@@ -110,7 +110,7 @@ func NewFunctionTemplateWithError(
 func (tmpl *FunctionTemplate) GetFunction(ctx *Context) *Function {
 	rtn := C.FunctionTemplateGetFunction(tmpl.ptr, ctx.ptr)
 	runtime.KeepAlive(tmpl)
-	val, err := valueResult(ctx, rtn)
+	val, err := valueResult(ctx.iso, rtn)
 	if err != nil {
 		panic(err) // TODO: Consider returning the error
 	}
@@ -192,13 +192,13 @@ func goFunctionCallback(
 	this := *thisAndArgs
 	info := &FunctionCallbackInfo{
 		ctx:  ctx,
-		this: &Object{&Value{ptr: this, ctx: ctx}},
+		this: &Object{&Value{ptr: this, iso: ctx.iso}},
 		args: make([]*Value, argsCount),
 	}
 
 	argv := (*[1 << 30]C.ValuePtr)(unsafe.Pointer(thisAndArgs))[1 : argsCount+1 : argsCount+1]
 	for i, v := range argv {
-		val := &Value{ptr: v, ctx: ctx}
+		val := &Value{ptr: v, iso: ctx.iso}
 		info.args[i] = val
 	}
 

@@ -23,7 +23,7 @@ func (o *Object) MethodCall(methodName string, args ...Valuer) (*Value, error) {
 	defer C.free(unsafe.Pointer(ckey))
 
 	getRtn := C.ObjectGet(o.ptr, ckey)
-	prop, err := valueResult(o.ctx, getRtn)
+	prop, err := valueResult(o.iso, getRtn)
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +53,7 @@ func coerceValue(iso *Isolate, val interface{}) (*Value, error) {
 // If the value passed is a Go supported primitive (string, int32, uint32, int64, uint64, float64, big.Int)
 // then a *Value will be created and set as the value property.
 func (o *Object) Set(key string, val interface{}) error {
-	value, err := coerceValue(o.ctx.iso, val)
+	value, err := coerceValue(o.iso, val)
 	if err != nil {
 		return err
 	}
@@ -69,7 +69,7 @@ func (o *Object) Set(key string, val interface{}) error {
 // If the value passed is a Go supported primitive (string, int32, uint32, int64, uint64, float64, big.Int)
 // then a *Value will be created and set as the value property.
 func (o *Object) SetSymbol(key *Symbol, val interface{}) error {
-	value, err := coerceValue(o.ctx.iso, val)
+	value, err := coerceValue(o.iso, val)
 	if err != nil {
 		return err
 	}
@@ -83,7 +83,7 @@ func (o *Object) SetSymbol(key *Symbol, val interface{}) error {
 // If the value passed is a Go supported primitive (string, int32, uint32, int64, uint64, float64, big.Int)
 // then a *Value will be created and set as the value property.
 func (o *Object) SetIdx(idx uint32, val interface{}) error {
-	value, err := coerceValue(o.ctx.iso, val)
+	value, err := coerceValue(o.iso, val)
 	if err != nil {
 		return err
 	}
@@ -96,7 +96,7 @@ func (o *Object) SetIdx(idx uint32, val interface{}) error {
 // SetInternalField sets the value of an internal field for an ObjectTemplate instance.
 // Panics if the index isn't in the range set by (*ObjectTemplate).SetInternalFieldCount.
 func (o *Object) SetInternalField(idx uint32, val interface{}) error {
-	value, err := coerceValue(o.ctx.iso, val)
+	value, err := coerceValue(o.iso, val)
 
 	if err != nil {
 		return err
@@ -123,13 +123,13 @@ func (o *Object) Get(key string) (*Value, error) {
 	defer C.free(unsafe.Pointer(ckey))
 
 	rtn := C.ObjectGet(o.ptr, ckey)
-	return valueResult(o.ctx, rtn)
+	return valueResult(o.iso, rtn)
 }
 
 // GetSymbol tries to get a Value for a given Object property key.
 func (o *Object) GetSymbol(key *Symbol) (*Value, error) {
 	rtn := C.ObjectGetAnyKey(o.ptr, key.ptr)
-	return valueResult(o.ctx, rtn)
+	return valueResult(o.iso, rtn)
 }
 
 // GetInternalField gets the Value set by SetInternalField for the given index
@@ -141,13 +141,13 @@ func (o *Object) GetInternalField(idx uint32) *Value {
 	if rtn.value == nil {
 		panic(newJSError(rtn.error))
 	}
-	return &Value{rtn.value, o.ctx}
+	return &Value{rtn.value, o.iso}
 }
 
 // GetIdx tries to get a Value at a give Object index.
 func (o *Object) GetIdx(idx uint32) (*Value, error) {
 	rtn := C.ObjectGetIdx(o.ptr, C.uint32_t(idx))
-	return valueResult(o.ctx, rtn)
+	return valueResult(o.iso, rtn)
 }
 
 // Has calls the abstract operation HasProperty(O, P) described in ECMA-262, 7.3.10.

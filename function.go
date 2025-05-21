@@ -26,7 +26,7 @@ func (fn *Function) Call(recv Valuer, args ...Valuer) (*Value, error) {
 		argptr = (*C.ValuePtr)(unsafe.Pointer(&cArgs[0]))
 	}
 	rtn := C.FunctionCall(fn.ptr, recv.value().ptr, C.int(len(args)), argptr)
-	return valueResult(fn.ctx, rtn)
+	return valueResult(fn.iso, rtn)
 }
 
 // Invoke a constructor function to create an object instance.
@@ -40,11 +40,11 @@ func (fn *Function) NewInstance(args ...Valuer) (*Object, error) {
 		argptr = (*C.ValuePtr)(unsafe.Pointer(&cArgs[0]))
 	}
 	rtn := C.FunctionNewInstance(fn.ptr, C.int(len(args)), argptr)
-	return objectResult(fn.ctx, rtn)
+	return objectResult(fn.iso, rtn)
 }
 
 // Return the source map url for a function.
 func (fn *Function) SourceMapUrl() *Value {
 	ptr := C.FunctionSourceMapUrl(fn.ptr)
-	return &Value{ptr, fn.ctx}
+	return &Value{ptr, fn.iso}
 }

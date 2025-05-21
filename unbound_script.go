@@ -23,7 +23,7 @@ func (u *UnboundScript) Run(ctx *Context) (*Value, error) {
 		panic("attempted to run unbound script in a context that belongs to a different isolate")
 	}
 	rtn := C.UnboundScriptRun(ctx.ptr, u.ptr)
-	return valueResult(ctx, rtn)
+	return valueResult(ctx.iso, rtn)
 }
 
 // Create a code cache from the unbound script.
