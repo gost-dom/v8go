@@ -18,7 +18,7 @@ update-all: fetch update-handlers update-set-prototypes update-auto-updater upda
 	git diff --exit-code
 	go vet
 	go test
-	git push origin HEAD:refs/heads/main -f
+	git push origin HEAD:master -f
 
 fetch:
 	git fetch origin
