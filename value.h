@@ -22,6 +22,10 @@ struct m_value {
   v8::Isolate* iso;
   m_ctx* ctx;
   v8::Global<v8::Value> ptr;
+  // ToLocal returns a Local value that can be stack-scoped. A valid HandleScope
+  // must exist on the stack before calling this.
+  v8::Local<v8::Value> ToLocal() { return this->ptr.Get(this->iso); }
+  bool IsEmpty() { return this->ptr.IsEmpty(); }
 };
 
 typedef v8::Isolate v8Isolate;
@@ -53,6 +57,8 @@ typedef struct {
 } RtnString;
 
 void ValueRelease(ValuePtr ptr);
+extern void* ValueToExternal(ValuePtr prt);
+extern uintptr_t ValueToExternalUintptr(ValuePtr prt);
 extern RtnString ValueToString(ValuePtr ptr);
 const uint32_t* ValueToArrayIndex(ValuePtr ptr);
 int ValueToBoolean(ValuePtr ptr);
@@ -136,7 +142,8 @@ extern RtnValue NewValueBigIntFromWords(IsolatePtr iso_ptr,
 extern ValuePtr NewValueError(IsolatePtr iso_ptr,
                               ErrorTypeIndex idx,
                               const char* message);
-
+extern ValuePtr NewValueExternal(IsolatePtr iso_ptr, void* v);
+extern ValuePtr NewValueExternalUintptr(IsolatePtr iso_ptr, uintptr_t v);
 const char* ExceptionGetMessageString(ValuePtr ptr);
 
 extern void ObjectSet(ValuePtr ptr, const char* key, ValuePtr val_ptr);

@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Add support for ObjectTemplate.MarkAsUndetectable.
 - Add `Value.StrictEquals` providing strict equality checks in Go code
+- Add support for "External" values, using cgo handles referencing internal values. This is a more Go friendly alternative where in V8, they are designed to contain C++ pointers.
 
 ### Changed
 
@@ -17,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Add support for `FunctionTemplate.Inherit` to set up prototype inheritance.
+- Add support for `Isolate.SetPromiseRejectedCallback` to get notifications of rejected promises.
 
 ### Changed
 - Auto-bumped V8 to 13.6.233.10.
