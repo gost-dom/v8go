@@ -1,4 +1,4 @@
-update-all: fetch update-handlers update-auto-updater update-module-rename update-typeof update-developer-docs update-esm update-readme
+update-all: fetch update-handlers update-set-prototypes update-auto-updater update-module-rename update-typeof update-developer-docs update-esm update-readme
 	git co upstream/master
 	git merge --rerere-autoupdate --no-edit \
 		auto-updater \
@@ -9,6 +9,8 @@ update-all: fetch update-handlers update-auto-updater update-module-rename updat
 		value-typeof || ./check-rerere
 	git merge --rerere-autoupdate --no-edit \
 		rename-module-to-gost || ./check-rerere
+	git merge --rerere-autoupdate --no-edit \
+		update/set-prototypes || ./check-rerere
 	sed -i "" 's/tommie/gost-dom/g' *_test.go
 	go test
 	git commit -a --amend --no-edit
@@ -66,6 +68,12 @@ update-handlers: update-external-support
 	go test
 	git push -f
 
+update-set-prototypes:
+	git co update/set-prototypes
+	# git pull --rebase
+	git rebase upstream/master
+	go test
+	git push -f
 
 update-readme:
 	git co readme
