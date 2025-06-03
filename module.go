@@ -134,3 +134,10 @@ func (m Module) GetModuleNamespace() *Value {
 	var res = C.ModuleGetModuleNamespace(m.iso, m.ptr)
 	return &Value{res, nil}
 }
+
+func (m Module) Delete() {
+	if m.ptr != nil {
+		C.ModuleDelete(m.ptr)
+	}
+	m.ptr = nil
+}
