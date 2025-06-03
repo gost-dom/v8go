@@ -335,6 +335,6 @@ func (i *Isolate) addHandle(h cgo.Handle) cgo.Handle {
 // rejected. This includes rejections that may occur after a script value has
 // been evaluated and V8 is running microtasks.
 func (i *Isolate) SetPromiseRejectedCallback(cb RejectedPromiseCallback) {
-	handle := unsafe.Pointer(uintptr(i.addHandle(cgo.NewHandle(cb))))
+	handle := C.uintptr_t(i.addHandle(cgo.NewHandle(cb)))
 	C.IsolateSetPromiseRejectedCallback(i.ptr, handle)
 }

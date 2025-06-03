@@ -109,9 +109,9 @@ void promiseRejectedCallback(v8::PromiseRejectMessage message) {
                             track_value(ctx, prom), track_value(ctx, val));
 }
 
-void IsolateSetPromiseRejectedCallback(IsolatePtr iso, void* handle) {
+void IsolateSetPromiseRejectedCallback(IsolatePtr iso, uintptr_t handle) {
   ISOLATE_SCOPE(iso)
-  iso->SetData(1, handle);
+  iso->SetData(1, (void*)handle);
   iso->SetPromiseRejectCallback(promiseRejectedCallback);
 }
 
