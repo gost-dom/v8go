@@ -1,10 +1,12 @@
 #include <stdint.h>
+#include <stdlib.h>
 
 #include "context.h"
 #include "deps/include/v8-context.h"
+#include "deps/include/v8-exception.h"
 #include "deps/include/v8-external.h"
+#include "errors.h"
 #include "isolate-macros.h"
-#include "utils.h"
 #include "value-macros.h"
 #include "value.h"
 
@@ -13,6 +15,29 @@
   m_ctx* ctx = isolateInternalContext(iso);
 
 using namespace v8;
+
+RtnString StringToRtnString(v8::Isolate* iso, Local<String> val) {
+  RtnString res = {};
+  res.length = val->Utf8LengthV2(iso);
+  res.data = (char*)(malloc(res.length));
+  val->WriteUtf8V2(iso, (char*)res.data, res.length);
+  return res;
+}
+
+RtnString ExceptionToRtnString(TryCatch& try_catch,
+                               v8::Isolate* iso,
+                               Local<Context> ctx) {
+  RtnString res = {};
+  res.error = ExceptionError(try_catch, iso, ctx);
+  return res;
+}
+
+void RtnStringRelease(RtnString rtnString) {
+  if (rtnString.data) {
+    free((void*)rtnString.data);
+  }
+  ErrorRelease(rtnString.error);
+}
 
 void ValueRelease(ValuePtr ptr) {
   if (ptr == nullptr) {
@@ -249,16 +274,11 @@ double ValueToNumber(ValuePtr ptr) {
 
 RtnString ValueToDetailString(ValuePtr ptr) {
   LOCAL_VALUE(ptr);
-  RtnString rtn = {0};
   Local<String> str;
   if (!value->ToDetailString(local_ctx).ToLocal(&str)) {
-    rtn.error = ExceptionError(try_catch, iso, local_ctx);
-    return rtn;
+    return ExceptionToRtnString(try_catch, iso, local_ctx);
   }
-  String::Utf8Value ds(iso, str);
-  rtn.data = CopyString(ds);
-  rtn.length = ds.length();
-  return rtn;
+  return StringToRtnString(iso, str);
 }
 
 RtnString ValueToString(ValuePtr ptr) {
@@ -596,4 +616,10 @@ int ValueStrictEquals(ValuePtr ptr, ValuePtr otherPtr) {
   LOCAL_VALUE(ptr);
   Local<Value> other = otherPtr->ptr.Get(iso);
   return value->StrictEquals(other);
+}
+
+RtnString ValueTypeOf(ValuePtr ptr) {
+  LOCAL_VALUE(ptr);
+  Local<String> result = value->TypeOf(iso);
+  return StringToRtnString(iso, result);
 }

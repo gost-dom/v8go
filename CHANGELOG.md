@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add support for ObjectTemplate.MarkAsUndetectable.
 - Add `Value.StrictEquals` providing strict equality checks in Go code
 - Add support for "External" values, using cgo handles referencing internal values. This is a more Go friendly alternative where in V8, they are designed to contain C++ pointers.
+- Add support for `Value.TypeOf()` corresponding to JavaScript `typeof` operator.
 
 ### Changed
 

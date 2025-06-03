@@ -429,7 +429,10 @@ func TestValueBigInt(t *testing.T) {
 	iso := v8.NewIsolate()
 	defer iso.Dispose()
 
-	x, _ := new(big.Int).SetString("36893488147419099136", 10) // larger than a single word size (64bit)
+	x, _ := new(
+		big.Int,
+	).SetString("36893488147419099136", 10)
+	// larger than a single word size (64bit)
 
 	tests := [...]struct {
 		source   string
@@ -699,7 +702,10 @@ func TestValueIsXXX(t *testing.T) {
 				t.Fatalf("failed to run script: %v", err)
 			}
 			if !tt.assert(val) {
-				t.Errorf("value is false for %s", runtime.FuncForPC(reflect.ValueOf(tt.assert).Pointer()).Name())
+				t.Errorf(
+					"value is false for %s",
+					runtime.FuncForPC(reflect.ValueOf(tt.assert).Pointer()).Name(),
+				)
 			}
 		})
 	}
@@ -816,7 +822,9 @@ func TestValueArrayBufferContents(t *testing.T) {
 	}
 	_, _, err = val.SharedArrayBufferGetContents()
 	if err == nil {
-		t.Fatalf("Expected an error trying call SharedArrayBufferGetContents on value of incorrect type")
+		t.Fatalf(
+			"Expected an error trying call SharedArrayBufferGetContents on value of incorrect type",
+		)
 	}
 }
 
@@ -905,5 +913,33 @@ func TestValueExternalHandle(t *testing.T) {
 	}
 	if internal.value != 2 {
 		t.Errorf("Value not incremented. Expected 2, got %d", internal.value)
+	}
+}
+
+func TestValueTypeOf(t *testing.T) {
+	t.Parallel()
+	iso := v8.NewIsolate()
+	defer iso.Dispose()
+	ctx := v8.NewContext(iso)
+	defer ctx.Close()
+
+	str1, _ := v8.NewValue(iso, "String")
+	if got := str1.TypeOf(); got != "string" {
+		t.Errorf(`NewValue("String"): expected string, got %s`, got)
+	}
+
+	str2, _ := ctx.RunScript("'string'", "")
+	if got := str2.TypeOf(); got != "string" {
+		t.Errorf("TypeOf('string'): expected string, got %s", got)
+	}
+
+	num1, _ := v8.NewValue(iso, 0.01)
+	if got := num1.TypeOf(); got != "number" {
+		t.Errorf(`NewValue(0.01): expected number, got %s`, got)
+	}
+
+	num2, _ := ctx.RunScript("0.01", "")
+	if got := num2.TypeOf(); got != "number" {
+		t.Errorf("TypeOf(0.01): expected number, got %s", got)
 	}
 }
