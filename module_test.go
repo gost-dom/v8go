@@ -15,7 +15,7 @@ func TestScriptCompilerModuleWithoutImports(t *testing.T) {
 	t.Parallel()
 
 	iso := v8.NewIsolate()
-	defer iso.Dispose()
+	t.Cleanup(iso.Dispose)
 
 	var lines []string
 	ft := v8.NewFunctionTemplateWithError(
@@ -36,6 +36,7 @@ func TestScriptCompilerModuleWithoutImports(t *testing.T) {
 	if err != nil {
 		t.Errorf("Unexpected error: %#v", err)
 	}
+	t.Cleanup(mod.Delete)
 	err = mod.InstantiateModule(ctx, nil)
 	if err != nil {
 		t.Errorf("Unexpected error: %#v", err)
@@ -59,26 +60,26 @@ func TestScriptCompilerSyntaxError(t *testing.T) {
 	t.Parallel()
 
 	iso := v8.NewIsolate()
-	defer iso.Dispose()
+	t.Cleanup(iso.Dispose)
 
 	ctx := v8.NewContext()
 	defer ctx.Close()
 
-	_, err := v8.CompileModule(iso, `{ syntax error`, "")
+	mod, err := v8.CompileModule(iso, `{ syntax error`, "")
 	if err == nil {
-		t.Error("Expected an error returned compiling a syntax error")
+		t.Cleanup(mod.Delete)
+		t.Errorf("Expected an error returned compiling a syntax error")
 	}
-
 }
 
 func TestScriptCompilerMissingModule(t *testing.T) {
 	t.Parallel()
 
 	iso := v8.NewIsolate()
-	defer iso.Dispose()
+	t.Cleanup(iso.Dispose)
 	global := v8.NewObjectTemplate(iso)
 	ctx := v8.NewContext(iso, global)
-	defer ctx.Close()
+	t.Cleanup(ctx.Close)
 
 	mod, _ := v8.CompileModule(iso, `import foo from "non-existing-module";`, "")
 	modules := Resolver{}
@@ -86,6 +87,7 @@ func TestScriptCompilerMissingModule(t *testing.T) {
 	if err == nil {
 		t.Fatal("Module instantiation should have failed because of missing module")
 	}
+	t.Cleanup(mod.Delete)
 	expected := "cannot resolve module 'non-existing-module': module not found"
 	actual := err.Error()
 	if !strings.Contains(actual, expected) {
@@ -97,7 +99,7 @@ func TestScriptCompilerImportingNonExistingModule(t *testing.T) {
 	t.Parallel()
 
 	iso := v8.NewIsolate()
-	defer iso.Dispose()
+	t.Cleanup(iso.Dispose)
 	var lines []string
 	ft := v8.NewFunctionTemplateWithError(
 		iso,
@@ -108,21 +110,22 @@ func TestScriptCompilerImportingNonExistingModule(t *testing.T) {
 	)
 	global := v8.NewObjectTemplate(iso)
 	global.Set("print", ft)
-	ctx := v8.NewContext(iso, global)
-	defer ctx.Close()
 
 	mod, err := v8.CompileModule(iso, `
 		import foo from "a";
 		print(1 + foo.a + foo.b)`, "")
 	if err != nil {
-		t.Errorf("Expected an error running script module: %v", err)
-		return
+		t.Fatalf("Unexpected an error running compiling module: %v", err)
 	}
+	t.Cleanup(mod.Delete)
+
 	t.Logf("Compiled. Status: %d", mod.GetStatus())
-	modules := Resolver{
+	modules := Resolver{t, map[string]string{
 		"a": "import b from 'b'; export default { a: 2, b };",
 		"b": "export default 3",
-	}
+	}}
+	ctx := v8.NewContext(iso, global)
+	t.Cleanup(ctx.Close)
 	err = mod.InstantiateModule(ctx, LoggingResolver{modules, t})
 	t.Logf("Instantiated. Status: %d", mod.GetStatus())
 	if err != nil {
@@ -147,7 +150,7 @@ func TestSameModuleImportedMultipleTimes(t *testing.T) {
 	t.Parallel()
 
 	iso := v8.NewIsolate()
-	defer iso.Dispose()
+	t.Cleanup(iso.Dispose)
 	var lines []string
 	ft := v8.NewFunctionTemplateWithError(
 		iso,
@@ -161,7 +164,7 @@ func TestSameModuleImportedMultipleTimes(t *testing.T) {
 	ctx := v8.NewContext(iso, global)
 	defer ctx.Close()
 
-	modules := Resolver{
+	modules := map[string]string{
 		"./c.js": `
 			let val = 0;
 			export const inc = () => {
@@ -183,7 +186,8 @@ func TestSameModuleImportedMultipleTimes(t *testing.T) {
 		t.Errorf("Expected an error running script module: %v", err)
 		return
 	}
-	err = mod.InstantiateModule(ctx, LoggingResolver{InitResolver(modules), t})
+	t.Cleanup(mod.Delete)
+	err = mod.InstantiateModule(ctx, LoggingResolver{InitResolver(t, modules), t})
 	t.Logf("Instantiated. Status: %d", mod.GetStatus())
 	if err != nil {
 		t.Errorf("Unexpected error: %#v", err)
@@ -246,7 +250,10 @@ func (r LoggingResolver) ResolveModule(
 	return res, err
 }
 
-type Resolver map[string]string
+type Resolver struct {
+	t       testing.TB
+	modules map[string]string
+}
 
 func (r Resolver) ResolveModule(
 	ctx *v8.Context,
@@ -254,14 +261,19 @@ func (r Resolver) ResolveModule(
 	attr v8.ImportAttributes,
 	referrer *v8.Module,
 ) (*v8.Module, error) {
-	script, found := r[spec]
+	script, found := r.modules[spec]
 	if !found {
 		return nil, errors.New("module not found")
 	}
-	return v8.CompileModule(ctx.Isolate(), script, spec)
+	res, err := v8.CompileModule(ctx.Isolate(), script, spec)
+	if err == nil {
+		r.t.Cleanup(res.Delete)
+	}
+	return res, err
 }
 
 type CachingModuleResolver struct {
+	t        testing.TB
 	Resolver Resolver
 	Modules  map[string]*v8.Module
 }
@@ -277,19 +289,24 @@ func (r *CachingModuleResolver) ResolveModule(
 		fmt.Println("Found!")
 		return module, nil
 	}
-	script, found := r.Resolver[spec]
+	script, found := r.Resolver.modules[spec]
 	if !found {
 		return nil, errors.New("module source not found")
 	}
 	module, err := v8.CompileModule(ctx.Isolate(), script, spec)
 	if err == nil {
 		r.Modules[spec] = module
+		r.t.Cleanup(module.Delete)
 	}
 	return module, err
 }
 
-func InitResolver(sources map[string]string) v8.ResolveModuler {
-	return &CachingModuleResolver{Resolver: sources, Modules: make(map[string]*v8.Module)}
+func InitResolver(t testing.TB, sources map[string]string) v8.ResolveModuler {
+	return &CachingModuleResolver{
+		t:        t,
+		Resolver: Resolver{t, sources},
+		Modules:  make(map[string]*v8.Module),
+	}
 }
 
 func WaitForPromise(ctx *v8.Context, p *v8.Promise) (*v8.Value, error) {

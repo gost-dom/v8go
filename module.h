@@ -20,6 +20,7 @@ class m_module {
     this->iso = iso;
     this->ptr.Reset(iso, mod);
   }
+  m_module() { this->ptr.Reset(); }
 };
 
 typedef v8::Isolate v8Isolate;
