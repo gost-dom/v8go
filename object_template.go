@@ -264,6 +264,38 @@ func goNamedPropertyGetterCallback(property C.ValuePtr, info C.v8goPropertyCallb
 	return
 }
 
+//export goNamedPropertySetterCallback
+func goNamedPropertySetterCallback(property C.ValuePtr, value C.ValuePtr, info C.v8goPropertyCallbackInfo) (intercepted bool, rtnerr C.ValuePtr) {
+	name := &Value{ptr: property}
+	cbref := Value{ptr: info.cbref}
+	ctx := getContext(int(info.ctx_ref))
+	handle := cbref.ExternalHandle()
+	cb, ok := handle.Value().(NamedPropertySetter)
+	if !ok {
+		return false, nil
+	}
+	err := cb.NamedPropertySet(name, &Value{ptr: value}, PropertyCallbackInfo{
+		ctx, &Object{&Value{ctx: ctx, ptr: info.jsThis}}, &Object{&Value{ctx: ctx, ptr: info.holder}},
+	})
+	intercepted = true
+	if errors.Is(err, NotIntercepted) {
+		err = nil
+		intercepted = false
+	}
+	if err != nil {
+		if verr, ok := err.(ValueError); ok {
+			rtnerr = verr.value().ptr
+		} else {
+			errv, err := NewValue(ctx.iso, err.Error())
+			if err != nil {
+				panic(err)
+			}
+			rtnerr = errv.ptr
+		}
+	}
+	return
+}
+
 // func goNamedPropertySetterCallback()
 // func goNamedPropertyQueryCallback()
 // func goNamedPropertyDeleteCallback()
