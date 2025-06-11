@@ -108,6 +108,22 @@ Intercepted HandleVoidRtnVal(bool intercepted,
   }
 }
 
+Intercepted HandleBoolRtnVal(bool success,
+                             bool intercepted,
+                             m_value* errVal,
+                             const v8::PropertyCallbackInfo<Boolean>& info) {
+  Isolate* iso = info.GetIsolate();
+  if (errVal != nullptr) {
+    iso->ThrowException(errVal->ToLocal());
+  }
+  info.GetReturnValue().Set(v8::Boolean::New(iso, success));
+  if (intercepted) {
+    return Intercepted::kYes;
+  } else {
+    return Intercepted::kNo;
+  }
+}
+
 Intercepted GetterCallback(Local<Name> name,
                            const v8::PropertyCallbackInfo<v8::Value>& info) {
   Isolate* iso = info.GetIsolate();
@@ -137,6 +153,20 @@ Intercepted SetterCallback(Local<Name> name,
   return HandleVoidRtnVal(retval.r0, retval.r1, info);
 }
 
+Intercepted DeleterCallback(Local<Name> name,
+                            const v8::PropertyCallbackInfo<Boolean>& info) {
+  Isolate* iso = info.GetIsolate();
+  ISOLATE_SCOPE(iso);
+
+  m_ctx* ctx;
+  v8goPropertyCallbackInfo goInfo = convertCallback(iso, info, ctx);
+
+  goNamedPropertyDeleterCallback_return retval =
+      goNamedPropertyDeleterCallback(track_value(ctx, name), goInfo);
+
+  return HandleBoolRtnVal(retval.r0, retval.r1, retval.r2, info);
+}
+
 void EnumeratorCallback(const v8::PropertyCallbackInfo<v8::Array>& info) {
   Isolate* iso = info.GetIsolate();
   ISOLATE_SCOPE(iso);
@@ -154,8 +184,8 @@ void ObjectTemplateSetNamedHandler(TemplatePtr ptr, ValuePtr callback_ref) {
   LOCAL_TEMPLATE(ptr);
   Local<ObjectTemplate> obj_tmpl = tmpl.As<ObjectTemplate>();
   obj_tmpl->SetHandler(NamedPropertyHandlerConfiguration(
-      GetterCallback, SetterCallback, nullptr, nullptr, EnumeratorCallback,
-      nullptr, nullptr, callback_ref->ToLocal(),
+      GetterCallback, SetterCallback, /* query */ nullptr, DeleterCallback,
+      EnumeratorCallback, nullptr, nullptr, callback_ref->ToLocal(),
       PropertyHandlerFlags::kHasNoSideEffect));
 }
 
