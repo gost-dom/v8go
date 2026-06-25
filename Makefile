@@ -68,7 +68,7 @@ update-external-support:
 	git diff --exit-code
 	go vet
 	go test
-	# git push -f
+	git push -f
 
 update-developer-docs:
 	git co developer-docs
