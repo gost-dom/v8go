@@ -24,7 +24,7 @@ update-all: fetch update-handlers update-set-prototypes update-auto-updater upda
 
 fetch:
 	git fetch origin
-	git fetch upstream
+	# git fetch upstream
 
 update-auto-updater:
 	git co auto-updater
