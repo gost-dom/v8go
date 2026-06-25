@@ -1,5 +1,7 @@
+UPSTREAM_BASE=v0.34.0
+
 update-all: fetch update-handlers update-set-prototypes update-auto-updater update-module-rename update-typeof update-developer-docs update-esm update-readme
-	git co upstream/master
+	git co $(UPSTREAM_BASE)
 	git merge --rerere-autoupdate --no-edit \
 		auto-updater \
 		update/handler-support
@@ -27,7 +29,7 @@ fetch:
 update-auto-updater:
 	git co auto-updater
 	# git pull --rebase
-	git rebase upstream/master
+	git rebase $(UPSTREAM_BASE)
 	go fmt
 	go generate
 	git diff --exit-code
@@ -38,7 +40,7 @@ update-auto-updater:
 update-module-rename:
 	git co rename-module-to-gost
 	# git pull --rebase
-	git rebase upstream/master
+	git rebase $(UPSTREAM_BASE)
 	go fmt
 	go generate
 	git diff --exit-code
@@ -49,7 +51,7 @@ update-module-rename:
 update-typeof:
 	git co value-typeof
 	# git pull --rebase
-	git rebase upstream/master
+	git rebase $(UPSTREAM_BASE)
 	go fmt
 	go generate
 	git diff --exit-code
@@ -60,7 +62,7 @@ update-typeof:
 update-external-support:
 	git co support-for-embedded-objects
 	# git pull --rebase
-	git rebase upstream/master
+	git rebase $(UPSTREAM_BASE)
 	go fmt
 	go generate
 	git diff --exit-code
@@ -71,7 +73,7 @@ update-external-support:
 update-developer-docs:
 	git co developer-docs
 	# git pull --rebase
-	git rebase upstream/master
+	git rebase $(UPSTREAM_BASE)
 	go fmt
 	go generate
 	git diff --exit-code
@@ -82,7 +84,7 @@ update-developer-docs:
 update-esm:
 	git co update/esm
 	# git pull --rebase
-	git rebase upstream/master
+	git rebase $(UPSTREAM_BASE)
 	go fmt
 	go generate
 	git diff --exit-code
@@ -104,7 +106,7 @@ update-handlers: update-external-support
 update-set-prototypes:
 	git co update/set-prototypes
 	# git pull --rebase
-	git rebase upstream/master
+	git rebase $(UPSTREAM_BASE)
 	go fmt
 	go generate
 	git diff --exit-code
@@ -115,7 +117,7 @@ update-set-prototypes:
 update-readme:
 	git co readme
 	# git pull
-	git rebase upstream/master
+	git rebase $(UPSTREAM_BASE)
 	go fmt
 	go generate
 	git diff --exit-code
