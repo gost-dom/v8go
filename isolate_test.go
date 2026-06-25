@@ -12,7 +12,7 @@ import (
 	"strings"
 	"testing"
 
-	v8 "github.com/tommie/v8go"
+	v8 "github.com/gost-dom/v8go"
 )
 
 func TestIsolateTerminateExecution(t *testing.T) {
