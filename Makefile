@@ -1,14 +1,15 @@
 UPSTREAM_BASE=v0.34.0
 
-update-all: fetch update-handlers update-set-prototypes update-auto-updater update-module-rename update-typeof update-developer-docs update-esm update-readme
+# update-typeof
+update-all: fetch update-handlers update-set-prototypes update-auto-updater update-module-rename update-developer-docs update-esm update-readme
 	git co $(UPSTREAM_BASE)
 	git merge --rerere-autoupdate --no-edit \
 		auto-updater \
 		update/handler-support
 	git merge --rerere-autoupdate --no-edit \
 		update/esm || ./check-rerere
-	git merge --rerere-autoupdate --no-edit \
-		value-typeof || ./check-rerere
+	# git merge --rerere-autoupdate --no-edit \
+	# 	value-typeof || ./check-rerere
 	git merge --rerere-autoupdate --no-edit \
 		rename-module-to-gost || ./check-rerere
 	git merge --rerere-autoupdate --no-edit \
@@ -48,16 +49,16 @@ update-module-rename:
 	go test
 	git push -f
 
-update-typeof:
-	git co value-typeof
-	# git pull --rebase
-	git rebase $(UPSTREAM_BASE)
-	go fmt
-	go generate
-	git diff --exit-code
-	go vet
-	go test
-	# git push -f
+# update-typeof:
+# 	git co value-typeof
+# 	# git pull --rebase
+# 	git rebase $(UPSTREAM_BASE)
+# 	go fmt
+# 	go generate
+# 	git diff --exit-code
+# 	go vet
+# 	go test
+# 	# git push -f
 
 update-external-support:
 	git co support-for-embedded-objects
