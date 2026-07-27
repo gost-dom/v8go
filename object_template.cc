@@ -21,7 +21,7 @@ static Intercepted PropertyCallback(uint32_t index,
   // at runtime. We extract the Context reference from the embedder data so that
   // we can use the context registry to match the Context on the Go side
   Local<Context> local_ctx = iso->GetCurrentContext();
-  int ctx_ref = local_ctx->GetEmbedderData(1).As<Integer>()->Value();
+  int ctx_ref = local_ctx->GetEmbedderDataV2(1).As<Integer>()->Value();
   m_ctx* ctx = goContext(ctx_ref);
 
   int callback_ref = info.Data().As<Integer>()->Value();
@@ -67,7 +67,7 @@ v8goPropertyCallbackInfo convertCallback(
     m_ctx*& ctx) {
   Local<Context> local_ctx = iso->GetCurrentContext();
 
-  int ctx_ref = local_ctx->GetEmbedderData(1).As<Integer>()->Value();
+  int ctx_ref = local_ctx->GetEmbedderDataV2(1).As<Integer>()->Value();
   ctx = goContext(ctx_ref);
 
   v8goPropertyCallbackInfo rtnVal;
@@ -143,9 +143,12 @@ Intercepted GetterCallback(Local<Name> name,
   return HandleRtnVal<Value>(retval.r0, retval.r1, retval.r2, info);
 }
 
+// NamedPropertySetterCallbackV2: the setter now reports success via a
+// PropertyCallbackInfo<Boolean> return value (false makes a strict-mode
+// assignment throw). We report success whenever the Go side intercepted.
 Intercepted SetterCallback(Local<Name> name,
                            Local<Value> value,
-                           const v8::PropertyCallbackInfo<void>& info) {
+                           const v8::PropertyCallbackInfo<v8::Boolean>& info) {
   Isolate* iso = info.GetIsolate();
   ISOLATE_SCOPE(iso);
 
@@ -155,7 +158,7 @@ Intercepted SetterCallback(Local<Name> name,
   goNamedPropertySetterCallback_return retval = goNamedPropertySetterCallback(
       track_value(ctx, name), track_value(ctx, value), goInfo);
 
-  return HandleVoidRtnVal(retval.r0, retval.r1, info);
+  return HandleBoolRtnVal(retval.r0, retval.r0, retval.r1, info);
 }
 
 Intercepted DeleterCallback(Local<Name> name,

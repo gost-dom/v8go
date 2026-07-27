@@ -178,7 +178,7 @@ RtnValue ObjectGetPrototype(ValuePtr ptr) {
   LOCAL_OBJECT(ptr);
   RtnValue rtn = {};
 
-  Local<Value> result = obj->GetPrototypeV2();
+  Local<Value> result = obj->GetPrototype();
   m_value* new_val = new m_value;
   new_val->id = 0;
   new_val->iso = iso;
@@ -192,5 +192,5 @@ RtnValue ObjectGetPrototype(ValuePtr ptr) {
 void ObjectSetPrototype(ValuePtr ptr, ValuePtr proto_ptr) {
   LOCAL_OBJECT(ptr);
   // Local<Context> local_ctx = ctx_ptr->ptr.Get(iso);
-  obj->SetPrototypeV2(local_ctx, proto_ptr->ptr.Get(iso)).Check();
+  obj->SetPrototype(local_ctx, proto_ptr->ptr.Get(iso)).Check();
 }

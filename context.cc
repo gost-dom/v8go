@@ -32,8 +32,8 @@ ContextPtr NewContext(IsolatePtr iso,
   m_ctx* ctx = new m_ctx;
   ctx->ptr.Reset(iso, local_ctx);
   ctx->iso = iso;
-  local_ctx->SetEmbedderData(1, Integer::New(iso, ref));
-  local_ctx->SetEmbedderData(
+  local_ctx->SetEmbedderDataV2(1, Integer::New(iso, ref));
+  local_ctx->SetEmbedderDataV2(
       2, External::New(iso, ctx, kExternalPointerTypeTagDefault));
   return ctx;
 }

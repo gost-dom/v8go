@@ -57,10 +57,10 @@ v8::MaybeLocal<v8::Module> ResolveModuleCallback(
     v8::Local<v8::FixedArray> import_attributes,
     v8::Local<v8::Module> referrer) {
   v8Isolate* iso = v8::Isolate::GetCurrent();
-  int ctx_ref = context->GetEmbedderData(1).As<v8::Integer>()->Value();
-  std::size_t cap = specifier->Utf8LengthV2(iso);
+  int ctx_ref = context->GetEmbedderDataV2(1).As<v8::Integer>()->Value();
+  std::size_t cap = specifier->Utf8Length(iso);
   char* buf = static_cast<char*>(malloc(cap));
-  specifier->WriteUtf8V2(iso, buf, cap);
+  specifier->WriteUtf8(iso, buf, cap);
   m_module ref(iso, referrer);
   v8goFixedArray attributes(iso, import_attributes);
   resolveModuleCallback_return retval =
