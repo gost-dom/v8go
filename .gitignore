@@ -6,6 +6,8 @@
 .build
 .cipd
 .gclient_entries
+deps/.gcs_entries
+__pycache__/
 
 deps/darwin-x86_64/libv8_debug.a
 deps/.gclient_previous*
