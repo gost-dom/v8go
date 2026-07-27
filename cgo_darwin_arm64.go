@@ -4,4 +4,4 @@
 package v8go
 
 // Ensure the appropriate cgo library is pulled in.
-import _ "github.com/tommie/v8go/deps/darwin_arm64"
+import _ "github.com/iquirino/v8go/deps/darwin_arm64"
