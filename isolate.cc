@@ -96,14 +96,14 @@ int IsolateIsExecutionTerminating(IsolatePtr iso) {
 }
 
 void promiseRejectedCallback(v8::PromiseRejectMessage message) {
-  auto iso = message.GetPromise()->GetIsolate();
+  auto iso = Isolate::GetCurrent();
 
   Local<Promise> prom = message.GetPromise();
   auto handle = iso->GetData(1);
   Local<Context> v8Ctx = prom->GetCreationContext(iso).ToLocalChecked();
   Local<External> ext = v8Ctx->GetEmbedderData(2).As<External>();
   int ctx_ref = v8Ctx->GetEmbedderData(1).As<Integer>()->Value();
-  m_ctx* ctx = (m_ctx*)ext->Value();
+  m_ctx* ctx = (m_ctx*)ext->Value(kExternalPointerTypeTagDefault);
   Local<Value> val = message.GetValue();
   goRejectedPromiseCallback(ctx_ref, handle, message.GetEvent(),
                             track_value(ctx, prom), track_value(ctx, val));

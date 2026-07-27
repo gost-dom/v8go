@@ -1,0 +1,18 @@
+diff --git a/src/base/macros.h b/src/base/macros.h
+index 4355dec8f7d..517c0a151de 100644
+--- a/deps/v8/src/base/macros.h
++++ b/deps/v8/src/base/macros.h
+@@ -658,6 +658,13 @@ static_assert(V8_ENABLE_SIMD128);
+ #define END_ALLOW_MISSING_DESIGNATED_FIELD_INITIALIZERS()
+ #endif  // defined(__clang__)
+ 
++// GCC does not provide the clang builtin __has_warning. Without a fallback,
++// the clang-only diagnostic guards below expand to `0(...)` under GCC, which
++// is a preprocessor syntax error ("missing binary operator before (").
++#ifndef __has_warning
++#define __has_warning(x) 0
++#endif
++
+ // Disable/enable -Wlifetime-safety warnings in code.
+ #if defined(__clang__) && defined(__has_warning) && \
+     __has_warning("-Wlifetime-safety")

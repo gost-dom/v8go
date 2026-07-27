@@ -90,6 +90,8 @@ icu_use_data_file=false
 v8_enable_test_features=false
 exclude_unwind_tables=true
 v8_android_log_stdout=true
+v8_enable_sandbox=false
+v8_enable_temporal_support=false
 """
 
 def v8deps():
@@ -167,6 +169,35 @@ def apply_mingw_patches():
 def apply_patch(patch_name, working_dir):
     patch_path = os.path.join(deps_path, os_arch(), patch_name + ".patch")
     subprocess_check_call(["git", "apply", "-v", patch_path], cwd=working_dir)
+
+def fixup_gcc_toolchain_ar():
+    """Give the Linux GCC toolchain an absolute path to `ar`.
+
+    V8 15.x lists `ar` as an explicit build input via
+    `rebase_path(ar, ".", root_out_dir)` (build/toolchain/gcc_toolchain.gni).
+    When `ar` is a bare command name it resolves to a nonexistent build-relative
+    path and ninja fails with "'ar', needed by ..., missing and no known rule".
+    The clang toolchains avoid this by using an absolute llvm-ar path; the GCC
+    toolchains use bare names, so we rewrite them here. build/ is a gclient dep
+    that `gclient sync` resets on every build, so this must run post-sync rather
+    than live in deps/patches/.
+    """
+    if args.os != "linux" or is_clang:
+        return
+    build_gn = os.path.join(v8_path, "build", "toolchain", "linux", "BUILD.gn")
+    with open(build_gn) as f:
+        content = f.read()
+    if args.arch == "amd64":
+        ar_abs = shutil.which("ar")
+        if ar_abs:
+            content = content.replace('ar = "ar"', 'ar = "%s"' % ar_abs)
+    elif args.arch == "arm64":
+        ar_abs = shutil.which("aarch64-linux-gnu-ar")
+        if ar_abs:
+            # First occurrence is the arm64 gcc_toolchain block.
+            content = content.replace('ar = "${toolprefix}ar"', 'ar = "%s"' % ar_abs, 1)
+    with open(build_gn, "w") as f:
+        f.write(content)
 
 def update_last_change():
     out_path = os.path.join(v8_path, "build", "util", "LASTCHANGE")
@@ -290,6 +321,7 @@ def allocate_disjoint_files(ar_files, case_sensitive=True):
 
 def main():
     v8deps()
+    fixup_gcc_toolchain_ar()
     if is_windows:
         apply_mingw_patches()
 
