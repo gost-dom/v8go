@@ -13,7 +13,7 @@ update-all: fetch update-handlers update-set-prototypes update-auto-updater upda
 		rename-module-to-gost || ./check-rerere
 	git merge --rerere-autoupdate --no-edit \
 		update/set-prototypes || ./check-rerere
-	sed -i "" 's/tommie/gost-dom/g' *_test.go
+	sed -i "" 's/iquirino/gost-dom/g' *_test.go
 	git commit -a --amend --no-edit
 	go fmt
 	go generate

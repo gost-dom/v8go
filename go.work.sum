@@ -1,0 +1,6 @@
+github.com/iquirino/v8go/deps/android_amd64 v0.0.0-20250515043113-5dcc98077472/go.mod h1:+SU4RWSqMXAx2oR/Gzkyc1YAG6F8SCzttMv3sZkh+qY=
+github.com/iquirino/v8go/deps/android_arm64 v0.0.0-20250515043113-5dcc98077472/go.mod h1:cR4ynUc528GmLCLOb3c1iM2d6qZ5DCVHh+eAD7sJDBQ=
+github.com/iquirino/v8go/deps/darwin_amd64 v0.0.0-20250515043113-5dcc98077472/go.mod h1:0qn9w9F7mniTrixPYggJNQQtpAkb9OKY3STy3SSEBi4=
+github.com/iquirino/v8go/deps/darwin_arm64 v0.0.0-20250515043113-5dcc98077472/go.mod h1:bd8hssu+JaGC4mIE9SukKia0TYs5v977mNodhgpJrdo=
+github.com/iquirino/v8go/deps/linux_amd64 v0.0.0-20250515043113-5dcc98077472/go.mod h1:ZKG7g6Rah4/ZRzb07qFrQI/EPSm2PMj1cN/9y4fxgO8=
+github.com/iquirino/v8go/deps/linux_arm64 v0.0.0-20250515043113-5dcc98077472/go.mod h1:B/myVnZ82IRgW//OzDnHArcOzW8Yq7FbWnMnYPbZ0Hc=

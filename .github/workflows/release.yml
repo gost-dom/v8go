@@ -130,5 +130,5 @@ jobs:
     - name: Create Summary
       run: |
         echo "Tag: ${{ steps.changelog.outputs.version }}" >>"$GITHUB_STEP_SUMMARY"
-        echo "Commit: https://github.com/tommie/v8go/commit/${{ steps.find_commit.outputs.commit }}" >>"$GITHUB_STEP_SUMMARY"
+        echo "Commit: https://github.com/iquirino/v8go/commit/${{ steps.find_commit.outputs.commit }}" >>"$GITHUB_STEP_SUMMARY"
         echo "Release: ${{ steps.create_release.outputs.html_url }}" >>"$GITHUB_STEP_SUMMARY"

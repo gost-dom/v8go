@@ -4,10 +4,10 @@ version: 2
 cli:
   server: https://app.fossa.com
   fetcher: custom
-  project: git@github.com:tommie/v8go.git
+  project: git@github.com:iquirino/v8go.git
 analyze:
   modules:
     - name: v8go
       type: go
-      target: github.com/tommie/v8go
+      target: github.com/iquirino/v8go
       path: .

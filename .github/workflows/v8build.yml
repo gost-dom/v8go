@@ -257,7 +257,7 @@ jobs:
 
         echo "V8 Commit: $(<deps/v8_hash)" >>"$GITHUB_STEP_SUMMARY"
         echo "V8 Version: ${{ steps.update_v8.outputs.latest_v8_version }}" >>"$GITHUB_STEP_SUMMARY"
-        echo "Commit: https://github.com/tommie/v8go/commit/$commit_sha" >>"$GITHUB_STEP_SUMMARY"
+        echo "Commit: https://github.com/iquirino/v8go/commit/$commit_sha" >>"$GITHUB_STEP_SUMMARY"
 
         echo "sha=$commit_sha" >>"$GITHUB_OUTPUT"
 
@@ -331,6 +331,6 @@ jobs:
         commit_sha="${{ steps.commit.outputs.commit_long_sha }}"
         commit_sha="${commit_sha#HEAD }"
 
-        echo "Commit: https://github.com/tommie/v8go/commit/$commit_sha" >>"$GITHUB_STEP_SUMMARY"
+        echo "Commit: https://github.com/iquirino/v8go/commit/$commit_sha" >>"$GITHUB_STEP_SUMMARY"
 
         echo "sha=$commit_sha" >>"$GITHUB_OUTPUT"
