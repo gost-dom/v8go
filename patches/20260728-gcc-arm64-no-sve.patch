@@ -1,0 +1,50 @@
+diff --git a/src/objects/simd.cc b/src/objects/simd.cc
+index 0376f86e29e..8030351524a 100644
+--- a/deps/v8/src/objects/simd.cc
++++ b/deps/v8/src/objects/simd.cc
+@@ -54,11 +54,14 @@ inline SimdKinds get_vectorization_kind() {
+     return SimdKinds::kSSE;
+   }
+ #elif defined(NEON64)
+-#if V8_TARGET_ARCH_ARM64
++// V8's SVE path uses clang-only builtins (__builtin_sve_*) and
++// __attribute__((target("sve"))), which GCC does not provide. Only select SVE
++// when compiling with clang; GCC arm64 falls back to the NEON/scalar path.
++#if V8_TARGET_ARCH_ARM64 && defined(__clang__)
+   if (CpuFeatures::IsSupported(SVE)) {
+     return SimdKinds::kSVE;
+   }
+-#endif  // V8_TARGET_ARCH_ARM64
++#endif  // V8_TARGET_ARCH_ARM64 && defined(__clang__)
+ 
+   // No need for a runtime check since all Arm64 CPUs have Neon.
+   return SimdKinds::kNeon;
+@@ -347,7 +350,8 @@ uintptr_t fast_search_avx(T* array, uintptr_t array_len, uintptr_t index,
+ }
+ #endif  // ifdef __SSE3__
+ 
+-#ifdef NEON64
++// The SVE implementation relies on clang-only SVE builtins; exclude it from GCC.
++#if defined(NEON64) && defined(__clang__)
+ 
+ template <typename ScalarType>
+ struct SVEOperations {
+@@ -636,15 +640,15 @@ TARGET_SVE inline uintptr_t fast_search_sve(T* array, uintptr_t array_len,
+ template <typename T>
+ inline uintptr_t search(T* array, uintptr_t array_len, uintptr_t index,
+                         T search_element) {
+-#ifdef NEON64
++#if defined(NEON64) && defined(__clang__)
+   if (get_vectorization_kind() == SimdKinds::kSVE) {
+     return fast_search_sve(array, array_len, index, search_element);
+   }
+-#else
++#elif !defined(NEON64)
+   if (get_vectorization_kind() == SimdKinds::kAVX2) {
+     return fast_search_avx(array, array_len, index, search_element);
+   }
+-#endif  // NEON64
++#endif  // NEON64 && defined(__clang__)
+ 
+   return fast_search_noavx(array, array_len, index, search_element);
+ }

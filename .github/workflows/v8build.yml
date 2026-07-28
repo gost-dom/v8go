@@ -80,7 +80,11 @@ jobs:
         - os: linux
           platform: ubuntu-latest
         - os: darwin
-          platform: macos-latest
+          # Pinned: macos-latest moved to Xcode 26 / macOS SDK 26, whose libc++
+          # <new> header conflicts with V8 15.0.245.21's operator new/delete
+          # declarations ("visibility does not match previous declaration").
+          # macos-15 ships an SDK contemporary with this V8 revision.
+          platform: macos-15
     runs-on: ${{ matrix.platform }}
     steps:
     - name: Install g++-aarch64-linux-gnu
@@ -88,7 +92,7 @@ jobs:
       run: sudo apt update && sudo apt install g++-aarch64-linux-gnu -y
 
     - name: Install setuptools
-      if: matrix.platform == 'macos-latest'
+      if: matrix.os == 'darwin'
       run: python3 -m pip install --upgrade setuptools
       env:
         # https://stackoverflow.com/a/76469774
@@ -104,7 +108,7 @@ jobs:
         echo "/usr/lib/ccache" >> "$GITHUB_PATH"
 
     - name: Install CCache
-      if: matrix.platform == 'macos-latest'
+      if: matrix.os == 'darwin'
       run: |
         brew install ccache
 
