@@ -62,6 +62,7 @@ type Isolate struct {
 
 	null      *Value
 	undefined *Value
+	handles   []cgo.Handle
 }
 
 // HeapStatistics represents V8 isolate heap statistics
@@ -285,6 +286,9 @@ func goWriteHeapSnapshotChunk(writerRef C.uintptr_t, data *C.char, size C.int) C
 func (i *Isolate) Dispose() {
 	if i.ptr == nil {
 		return
+	}
+	for _, h := range i.handles {
+		h.Delete()
 	}
 	C.IsolateDispose(i.ptr)
 	i.ptr = nil

@@ -26,6 +26,7 @@ struct m_value {
   // created by NewValueGo. It is the cgo.Handle in the External, deleted
   // when V8 collects it, or the Isolate is disposed.
   uintptr_t go_handle = 0;
+  v8::Local<v8::Value> ToLocal() { return this->ptr.Get(this->iso); }
 };
 
 typedef v8::Isolate v8Isolate;
