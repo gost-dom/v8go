@@ -124,7 +124,7 @@ Intercepted GetterCallback(Local<Name> name,
 
 Intercepted SetterCallback(Local<Name> name,
                            Local<Value> value,
-                           const v8::PropertyCallbackInfo<void>& info) {
+                           const v8::PropertyCallbackInfo<v8::Boolean>& info) {
   Isolate* iso = info.GetIsolate();
   ISOLATE_SCOPE(iso);
 
@@ -134,7 +134,14 @@ Intercepted SetterCallback(Local<Name> name,
   goNamedPropertySetterCallback_return retval = goNamedPropertySetterCallback(
       track_value(ctx, name), track_value(ctx, value), goInfo);
 
-  return HandleVoidRtnVal(retval.r0, retval.r1, info);
+  if (retval.r1 != nullptr) {
+    info.GetReturnValue().Set(false);
+  }
+  if (retval.r0) {
+    return Intercepted::kYes;
+  } else {
+    return Intercepted::kNo;
+  }
 }
 
 void EnumeratorCallback(const v8::PropertyCallbackInfo<v8::Array>& info) {

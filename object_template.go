@@ -278,17 +278,26 @@ func goNamedPropertyGetterCallback(
 }
 
 //export goNamedPropertySetterCallback
-func goNamedPropertySetterCallback(property C.ValuePtr, value C.ValuePtr, info C.v8goPropertyCallbackInfo) (intercepted bool, rtnerr C.ValuePtr) {
+func goNamedPropertySetterCallback(
+	property C.ValuePtr,
+	value C.ValuePtr,
+	info C.v8goPropertyCallbackInfo,
+) (intercepted bool, rtnerr C.ValuePtr) {
 	name := &Value{ptr: property}
 	cbref := Value{ptr: info.cbref}
 	ctx := getContext(int(info.ctx_ref))
-	handle := cbref.ExternalHandle()
-	cb, ok := handle.Value().(NamedPropertySetter)
+	ex, ok := cbref.External()
+	if !ok {
+		return false, nil
+	}
+	cb, ok := ex.(NamedPropertySetter)
 	if !ok {
 		return false, nil
 	}
 	err := cb.NamedPropertySet(name, &Value{ptr: value}, PropertyCallbackInfo{
-		ctx, &Object{&Value{ctx: ctx, ptr: info.jsThis}}, &Object{&Value{ctx: ctx, ptr: info.holder}},
+		ctx,
+		&Object{&Value{ctx: ctx, ptr: info.jsThis}},
+		&Object{&Value{ctx: ctx, ptr: info.holder}},
 	})
 	intercepted = true
 	if errors.Is(err, NotIntercepted) {
