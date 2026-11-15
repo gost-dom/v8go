@@ -12,7 +12,6 @@ import (
 	"fmt"
 	"io"
 	"math/big"
-	"reflect"
 	"runtime/cgo"
 	"unsafe"
 )
@@ -151,9 +150,6 @@ func NewValue(iso *Isolate, val interface{}) (*Value, error) {
 		// Wrapping a Value in an External is almost certainly a mistake.
 		return nil, fmt.Errorf("v8go: unsupported value type `%T`", v)
 	default:
-		if reflect.ValueOf(v).Kind() != reflect.Pointer {
-			return nil, fmt.Errorf("v8go: unsupported value type `%T`", v)
-		}
 		rtnVal = &Value{
 			ptr: C.NewValueGo(iso.ptr, C.uintptr_t(cgo.NewHandle(v))),
 		}
