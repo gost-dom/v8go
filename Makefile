@@ -125,7 +125,7 @@ update-set-prototypes:
 
 update-readme:
 	git co readme
-	git co -f backup/readme
+	git branch -f backup/readme
 	# git pull
 	git rebase $(UPSTREAM_BASE)
 	go fmt
