@@ -188,7 +188,11 @@ type NamedPropertyEnumeratorer interface {
 }
 
 type NamedPropertyDefinerer interface {
-	NamedPropertyDefiner(property *Value, desc *PropertyDescriptor, info NamedPropertyCallback) error
+	NamedPropertyDefiner(
+		property *Value,
+		desc *PropertyDescriptor,
+		info NamedPropertyCallback,
+	) error
 }
 
 type NamedPropertyDescriptorer interface {
@@ -212,26 +216,39 @@ type NamedPropertyDescriptorer interface {
 // embedder does want to handle the callback, it must communicate this back to
 // V8 by returning an [ErrNotIntercepted]. When thie is returned, the function
 // must not produce any side effects.
-func (t *ObjectTemplate) SetNamedHandler(handler NamedPropertyGetter) {
+func (t *ObjectTemplate) SetNamedHandler(handler NamedPropertyGetter) error {
 	if handler == nil {
 		panic("nil property argument not supported")
 	}
 	handle := cgo.NewHandle(handler)
-	cb_ref := NewValueExternalHandle(t.iso, handle)
+	cb_ref, err := NewValue(t.iso, handle)
+	if err != nil {
+		return err
+	}
 	C.ObjectTemplateSetNamedHandler(t.ptr, cb_ref.ptr)
+	return nil
 }
 
 //export goNamedPropertyGetterCallback
-func goNamedPropertyGetterCallback(property C.ValuePtr, info C.v8goPropertyCallbackInfo) (retVal C.ValuePtr, intercepted bool, rtnerr C.ValuePtr) {
+func goNamedPropertyGetterCallback(
+	property C.ValuePtr,
+	info C.v8goPropertyCallbackInfo,
+) (retVal C.ValuePtr, intercepted bool, rtnerr C.ValuePtr) {
 	cbref := Value{ptr: info.cbref}
 	ctx := getContext(int(info.ctx_ref))
 	// Should *ALWAYS* be ok for the getter; it's required.
-	cb, ok := cbref.ExternalHandle().Value().(NamedPropertyGetter)
+	ex, ok := cbref.External()
+	if !ok {
+		return nil, false, nil
+	}
+	cb, ok := ex.(NamedPropertyGetter)
 	if !ok {
 		return nil, false, nil
 	}
 	res, err := cb.NamedPropertyGet(&Value{ptr: property}, NamedPropertyCallback{
-		ctx, &Object{&Value{ctx: ctx, ptr: info.jsThis}}, &Object{&Value{ctx: ctx, ptr: info.holder}},
+		ctx,
+		&Object{&Value{ctx: ctx, ptr: info.jsThis}},
+		&Object{&Value{ctx: ctx, ptr: info.holder}},
 	})
 	intercepted = true
 	if err == NotIntercepted {
@@ -261,16 +278,24 @@ func goNamedPropertyGetterCallback(property C.ValuePtr, info C.v8goPropertyCallb
 // func goNamedPropertyEnumeratorCallback()
 
 //export goNamedPropertyEnumeratorCallback
-func goNamedPropertyEnumeratorCallback(info C.v8goPropertyCallbackInfo) (retVal C.ValuePtr, intercepted bool, rtnerr C.ValuePtr) {
+func goNamedPropertyEnumeratorCallback(
+	info C.v8goPropertyCallbackInfo,
+) (retVal C.ValuePtr, intercepted bool, rtnerr C.ValuePtr) {
 	cbref := Value{ptr: info.cbref}
 	ctx := getContext(int(info.ctx_ref))
 	// Should *ALWAYS* be ok for the getter; it's required.
-	cb, ok := cbref.ExternalHandle().Value().(NamedPropertyEnumeratorer)
+	ex, ok := cbref.External()
+	if !ok {
+		return nil, false, nil
+	}
+	cb, ok := ex.(NamedPropertyEnumeratorer)
 	if !ok {
 		return nil, false, nil
 	}
 	res, err := cb.NamedPropertyEnumerator(NamedPropertyCallback{
-		ctx, &Object{&Value{ctx: ctx, ptr: info.jsThis}}, &Object{&Value{ctx: ctx, ptr: info.holder}},
+		ctx,
+		&Object{&Value{ctx: ctx, ptr: info.jsThis}},
+		&Object{&Value{ctx: ctx, ptr: info.holder}},
 	})
 	intercepted = true
 	if err == NotIntercepted {

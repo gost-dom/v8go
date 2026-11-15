@@ -30,7 +30,7 @@ static Intercepted PropertyCallback(uint32_t index,
   _this->id = 0;
   _this->iso = iso;
   _this->ctx = ctx;
-  _this->ptr.Reset(iso, Global<Value>(iso, info.This()));
+  _this->ptr.Reset(iso, Global<Value>(iso, info.Holder()));
 
   // int args_count = info.Length();
   ValuePtr thisAndArgs[1];
@@ -69,8 +69,8 @@ v8goPropertyCallbackInfo convertCallback(
   v8goPropertyCallbackInfo rtnVal;
   rtnVal.ctx_ref = ctx_ref;
   rtnVal.cbref = track_value(ctx, info.Data());
-  rtnVal.jsThis = track_value(ctx, info.This());
-  rtnVal.holder = track_value(ctx, info.HolderV2());
+  rtnVal.jsThis = track_value(ctx, info.Holder());
+  rtnVal.holder = track_value(ctx, info.Holder());
   return rtnVal;
 }
 
