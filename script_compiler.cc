@@ -72,7 +72,6 @@ MaybeLocal<Module> ResolveModuleCallback(Local<Context> context,
                                          Local<FixedArray> import_attributes,
                                          Local<Module> referrer) {
   Local<Module> res;
-  context->GetIsolate()->ThrowError("Error importing module");
   return res;
 }
 
