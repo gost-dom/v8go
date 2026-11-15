@@ -2,12 +2,13 @@ UPSTREAM_BASE=v0.38.0
 GO=CC=clang CXX=clang++ CGO_CXXFLAGS=-nostdinc++ go
 
 # update-typeof
-update-all: fetch update-handlers update-set-prototypes update-auto-updater update-module-rename update-developer-docs update-esm update-readme
+update-all: fetch update-external update-handlers update-set-prototypes update-auto-updater update-module-rename update-developer-docs update-esm update-readme
 	git co $(UPSTREAM_BASE)
 	git merge --rerere-autoupdate --no-edit \
-		auto-updater || ./check-rerere
-	git merge --rerere-autoupdate --no-edit \
-		update/handler-support || ./check-rerere
+		auto-updater \
+		e/handler-support \
+		update/external-update \
+		|| ./check-rerere
 	git merge --rerere-autoupdate --no-edit \
 		update/esm || ./check-rerere
 	# git merge --rerere-autoupdate --no-edit \
@@ -63,6 +64,18 @@ update-module-rename:
 # 	go vet
 # 	go test
 # 	# git push -f
+
+update-external:
+	git co update/external-update
+	git branch -f backup/external-update
+	# git pull --rebase
+	git rebase $(UPSTREAM_BASE)
+	go fmt
+	go generate
+	git diff --exit-code
+	CC=clang CXX=clang++ CGO_CXXFLAGS=-nostdinc++ go vet
+	CC=clang CXX=clang++ CGO_CXXFLAGS=-nostdinc++ go test
+	git push -f
 
 update-external-support:
 	git co support-for-embedded-objects
