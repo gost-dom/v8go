@@ -2,11 +2,11 @@ UPSTREAM_BASE=v0.38.0
 GO=CC=clang CXX=clang++ CGO_CXXFLAGS=-nostdinc++ go
 
 # update-typeof
-update-all: fetch update-external update-handlers update-set-prototypes update-auto-updater update-module-rename update-developer-docs update-esm update-readme
+update-all: fetch update-external update-handlers update-set-prototypes update-auto-updater update-module-rename update-developer-docs update-esm update-readme 
 	git co $(UPSTREAM_BASE)
 	git merge --rerere-autoupdate --no-edit \
 		auto-updater \
-		e/handler-support \
+		update/handler-support \
 		update/external-update \
 		|| ./check-rerere
 	git merge --rerere-autoupdate --no-edit \
