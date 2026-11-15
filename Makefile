@@ -5,8 +5,9 @@ GO=CC=clang CXX=clang++ CGO_CXXFLAGS=-nostdinc++ go
 update-all: fetch update-handlers update-set-prototypes update-auto-updater update-module-rename update-developer-docs update-esm update-readme
 	git co $(UPSTREAM_BASE)
 	git merge --rerere-autoupdate --no-edit \
-		auto-updater \
-		update/handler-support
+		auto-updater || ./check-rerere
+	git merge --rerere-autoupdate --no-edit \
+		update/handler-support || ./check-rerere
 	git merge --rerere-autoupdate --no-edit \
 		update/esm || ./check-rerere
 	# git merge --rerere-autoupdate --no-edit \
