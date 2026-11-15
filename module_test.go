@@ -284,9 +284,7 @@ func (r *CachingModuleResolver) ResolveModule(
 	attr v8.ImportAttributes,
 	referrer *v8.Module,
 ) (*v8.Module, error) {
-	fmt.Println("Look for module", spec)
 	if module, found := r.Modules[spec]; found {
-		fmt.Println("Found!")
 		return module, nil
 	}
 	script, found := r.Resolver.modules[spec]
