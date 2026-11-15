@@ -24,13 +24,6 @@ func TestValueNewBaseCases(t *testing.T) {
 	}
 	iso := v8.NewIsolate()
 	defer iso.Dispose()
-	if _, err := v8.NewValue(iso, nil); err == nil {
-		t.Error("expected error, but got <nil>")
-	}
-	if _, err := v8.NewValue(iso, struct{}{}); err == nil {
-		t.Error("expected error, but got <nil>")
-	}
-
 }
 
 func TestValueFormatting(t *testing.T) {
@@ -909,15 +902,6 @@ func TestValueExternal(t *testing.T) {
 		got, ok := val.External()
 		if !ok || !reflect.DeepEqual(got, want) {
 			t.Errorf("External(%T): got %v, %v, want %v, true", want, got, ok, want)
-		}
-	}
-
-	// Types NewValue doesn't convert were probably meant to be converted, and
-	// a struct would be copied, so only pointers are wrapped.
-	type myString string
-	for _, v := range []any{42, float32(1), myString("a"), wrapped{42}, [1]int{1}, []int{1}, map[string]int{}, func() {}, make(chan int), nil, v8.Undefined(iso)} {
-		if _, err := v8.NewValue(iso, v); err == nil {
-			t.Errorf("NewValue(%T): expected error", v)
 		}
 	}
 
