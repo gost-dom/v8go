@@ -10,7 +10,6 @@ import "C"
 import (
 	"errors"
 	"runtime"
-	"runtime/cgo"
 	"unsafe"
 )
 
@@ -228,8 +227,8 @@ func (t *ObjectTemplate) SetNamedHandler(handler NamedPropertyGetter) error {
 	if handler == nil {
 		panic("nil property argument not supported")
 	}
-	handle := cgo.NewHandle(handler)
-	cb_ref, err := NewValue(t.iso, handle)
+	// handle := cgo.NewHandle(handler)
+	cb_ref, err := NewValue(t.iso, handler)
 	if err != nil {
 		return err
 	}
