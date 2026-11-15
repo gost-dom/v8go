@@ -328,11 +328,11 @@ func goNamedPropertyDeleterCallback(
 	ctx := getContext(int(info.ctx_ref))
 	ex, ok := cbref.External()
 	if !ok {
-		panic("Value is not a property getter")
+		return false, false, nil
 	}
 	cb, ok := ex.(NamedPropertyDeleter)
 	if !ok {
-		panic("Value is not a property getter")
+		return false, false, nil
 	}
 	var err error
 	success, err = cb.NamedPropertyDelete(name, PropertyCallbackInfo{
