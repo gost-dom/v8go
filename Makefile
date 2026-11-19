@@ -1,4 +1,4 @@
-UPSTREAM_BASE=v0.38.0
+UPSTREAM_BASE=v0.39.0
 GO=CC=clang CXX=clang++ CGO_CXXFLAGS=-nostdinc++ go
 
 # update-typeof
