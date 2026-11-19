@@ -12,6 +12,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+## [v0.44.0] - 2026-11-12
+
+### Changed
+- Auto-bumped V8 to 15.7.112.43.
+
+## [v0.43.0] - 2026-11-04
+
+### Changed
+- Auto-bumped V8 to 15.7.112.23.
+
+## [v0.42.0] - 2026-10-30
+
+### Changed
+- Auto-bumped V8 to 15.6.75.27.
+
+## [v0.41.0] - 2026-10-28
+
+### Changed
+- Auto-bumped V8 to 15.6.75.25.
+
+## [v0.40.0] - 2026-10-21
+
+### Changed
+- Auto-bumped V8 to 15.6.75.19.
+
 ## [v0.39.0] - 2026-10-16
 
 ### Changed
