@@ -4,6 +4,6 @@
 package __support
 
 import (
-	_ "github.com/tommie/v8go/deps/include_libcxx/__support/ibm"
-	_ "github.com/tommie/v8go/deps/include_libcxx/__support/xlocale"
+	_ "github.com/gost-dom/v8go/deps/include_libcxx/__support/ibm"
+	_ "github.com/gost-dom/v8go/deps/include_libcxx/__support/xlocale"
 )

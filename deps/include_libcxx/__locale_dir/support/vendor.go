@@ -4,5 +4,5 @@
 package support
 
 import (
-	_ "github.com/tommie/v8go/deps/include_libcxx/__locale_dir/support/no_locale"
+	_ "github.com/gost-dom/v8go/deps/include_libcxx/__locale_dir/support/no_locale"
 )

@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	v8 "github.com/tommie/v8go"
+	v8 "github.com/gost-dom/v8go"
 )
 
 func TestCPUProfileNode(t *testing.T) {
@@ -88,19 +88,38 @@ func findChild(t *testing.T, node *v8.CPUProfileNode, functionName string) *v8.C
 		}
 	}
 	if child == nil {
-		t.Fatalf("failed to find child node %q of %q; profile:\n%s", functionName, node.GetFunctionName(), formatProfileNode(node))
+		t.Fatalf(
+			"failed to find child node %q of %q; profile:\n%s",
+			functionName,
+			node.GetFunctionName(),
+			formatProfileNode(node),
+		)
 	}
 	return child
 }
 
-func checkNode(t *testing.T, node *v8.CPUProfileNode, scriptResourceName string, functionName string, line, column int) {
+func checkNode(
+	t *testing.T,
+	node *v8.CPUProfileNode,
+	scriptResourceName string,
+	functionName string,
+	line, column int,
+) {
 	t.Helper()
 
 	if node.GetFunctionName() != functionName {
-		t.Fatalf("expected node to have function name %s, but got %s", functionName, node.GetFunctionName())
+		t.Fatalf(
+			"expected node to have function name %s, but got %s",
+			functionName,
+			node.GetFunctionName(),
+		)
 	}
 	if node.GetScriptResourceName() != scriptResourceName {
-		t.Fatalf("expected node to have script resource name %s, but got %s", scriptResourceName, node.GetScriptResourceName())
+		t.Fatalf(
+			"expected node to have script resource name %s, but got %s",
+			scriptResourceName,
+			node.GetScriptResourceName(),
+		)
 	}
 	if node.GetLineNumber() != line {
 		t.Fatalf("expected node at line %d, but got %d", line, node.GetLineNumber())
@@ -116,7 +135,16 @@ func formatProfileNode(node *v8.CPUProfileNode) string {
 	var sb strings.Builder
 	var format func(node *v8.CPUProfileNode, depth int)
 	format = func(node *v8.CPUProfileNode, depth int) {
-		fmt.Fprintf(&sb, "%s%s (%s:%d:%d) hits=%d\n", strings.Repeat("  ", depth), node.GetFunctionName(), node.GetScriptResourceName(), node.GetLineNumber(), node.GetColumnNumber(), node.GetHitCount())
+		fmt.Fprintf(
+			&sb,
+			"%s%s (%s:%d:%d) hits=%d\n",
+			strings.Repeat("  ", depth),
+			node.GetFunctionName(),
+			node.GetScriptResourceName(),
+			node.GetLineNumber(),
+			node.GetColumnNumber(),
+			node.GetHitCount(),
+		)
 		for i := 0; i < node.GetChildrenCount(); i++ {
 			format(node.GetChild(i), depth+1)
 		}

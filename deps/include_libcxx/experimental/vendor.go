@@ -4,5 +4,5 @@
 package experimental
 
 import (
-	_ "github.com/tommie/v8go/deps/include_libcxx/experimental/__simd"
+	_ "github.com/gost-dom/v8go/deps/include_libcxx/experimental/__simd"
 )
