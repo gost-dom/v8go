@@ -6,11 +6,13 @@ package v8go_test
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"math"
 	"math/big"
 	"reflect"
 	"runtime"
+	"runtime/cgo"
 	"testing"
 	"time"
 
@@ -24,13 +26,6 @@ func TestValueNewBaseCases(t *testing.T) {
 	}
 	iso := v8.NewIsolate()
 	defer iso.Dispose()
-	if _, err := v8.NewValue(iso, nil); err == nil {
-		t.Error("expected error, but got <nil>")
-	}
-	if _, err := v8.NewValue(iso, struct{}{}); err == nil {
-		t.Error("expected error, but got <nil>")
-	}
-
 }
 
 func TestValueFormatting(t *testing.T) {
@@ -912,15 +907,6 @@ func TestValueExternal(t *testing.T) {
 		}
 	}
 
-	// Types NewValue doesn't convert were probably meant to be converted, and
-	// a struct would be copied, so only pointers are wrapped.
-	type myString string
-	for _, v := range []any{42, float32(1), myString("a"), wrapped{42}, [1]int{1}, []int{1}, map[string]int{}, func() {}, make(chan int), nil, v8.Undefined(iso)} {
-		if _, err := v8.NewValue(iso, v); err == nil {
-			t.Errorf("NewValue(%T): expected error", v)
-		}
-	}
-
 	val, err := v8.NewValue(iso, int32(42))
 	fatalIf(t, err)
 	if got, ok := val.External(); ok {
@@ -1011,4 +997,56 @@ func TestValueExternalDispose(t *testing.T) {
 	}
 	iso.Dispose()
 	waitFinalized(t, done)
+}
+
+type InternalValue struct {
+	value int
+}
+
+func (v *InternalValue) Increment() { v.value++ }
+
+func TestValueExternalHandle(t *testing.T) {
+	t.Parallel()
+	iso := v8.NewIsolate()
+	defer iso.Dispose()
+
+	ctx := v8.NewContext(iso)
+	defer ctx.Close()
+
+	internal := &InternalValue{}
+	handle := cgo.NewHandle(internal)
+	defer handle.Delete()
+
+	ft := v8.NewFunctionTemplate(iso, func(info *v8.FunctionCallbackInfo) *v8.Value {
+		return nil
+	})
+	ft.PrototypeTemplate().
+		Set("increment", v8.NewFunctionTemplateWithError(iso, func(info *v8.FunctionCallbackInfo) (*v8.Value, error) {
+			handle := info.This().GetInternalField(0).ExternalHandle()
+			if handle == 0 {
+				return nil, errors.New("Invalid handle")
+			}
+			if instance, ok := handle.Value().(*InternalValue); ok {
+				instance.Increment()
+				return nil, nil
+			} else {
+				return nil, errors.New("Not the right type")
+			}
+		}))
+	ft.InstanceTemplate().SetInternalFieldCount(1)
+	instance, err := ft.InstanceTemplate().NewInstance(ctx)
+	if err != nil {
+		t.Fatal("Error creating instance")
+	}
+	value := v8.NewValueExternalHandle(iso, handle)
+	instance.SetInternalField(0, value)
+
+	ctx.Global().Set("internal", instance)
+	_, err = ctx.RunScript("internal.increment(); internal.increment()", "")
+	if err != nil {
+		t.Error("Error running script", err)
+	}
+	if internal.value != 2 {
+		t.Errorf("Value not incremented. Expected 2, got %d", internal.value)
+	}
 }

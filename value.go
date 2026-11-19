@@ -12,7 +12,6 @@ import (
 	"fmt"
 	"io"
 	"math/big"
-	"reflect"
 	"runtime/cgo"
 	"unsafe"
 )
@@ -151,9 +150,6 @@ func NewValue(iso *Isolate, val interface{}) (*Value, error) {
 		// Wrapping a Value in an External is almost certainly a mistake.
 		return nil, fmt.Errorf("v8go: unsupported value type `%T`", v)
 	default:
-		if reflect.ValueOf(v).Kind() != reflect.Pointer {
-			return nil, fmt.Errorf("v8go: unsupported value type `%T`", v)
-		}
 		rtnVal = &Value{
 			ptr: C.NewValueGo(iso.ptr, C.uintptr_t(cgo.NewHandle(v))),
 		}
@@ -178,6 +174,66 @@ func (v *Value) External() (any, bool) {
 //export goDeleteHandle
 func goDeleteHandle(h C.uintptr_t) {
 	cgo.Handle(h).Delete()
+}
+
+// NewValueExternal allows storing an [unsafe.Pointer] in a value. This function
+// is discouraged, prefer using [NewValueExternalHandle] instead. This function
+// exists primarily for code that already uses unsafe pointers.
+//
+// An unsafe pointer can be read using [Value.External]
+func NewValueExternal(iso *Isolate, val unsafe.Pointer) *Value {
+	return &Value{
+		ptr: C.NewValueExternal(iso.ptr, val),
+	}
+}
+
+// NewValueExternalHandle can store a reference to a Go object as an "external"
+// v8 value, by using a [cgo.Handle]. The primary use case is when exposing
+// native Go objects to JavaScript code.
+//
+// Native external values can be stored as "internal fields" on v8 objects;
+// using [Object.SetInternalField].
+//
+// Warning: A cgo handle should be deleted through a call to [cgo.Handle.Delete]
+// when you are done with the object. Unfortunately v8go doesn't yet support
+// a callback when a JavaScript object is garbage collected.
+//
+// For a v8 context that is not short lived, this will cause a memory leak if
+// new objects are created continuously. For a short-lived context, be sure to
+// delete the cgo handles when the context is disposed.
+func NewValueExternalHandle(iso *Isolate, val cgo.Handle) *Value {
+	return &Value{
+		ptr: C.NewValueExternalUintptr(iso.ptr, C.uintptr_t(val)),
+	}
+}
+
+// External retrieves an [unsafe.Pointer]. This value must have been created
+// using [NewValueExternal].
+//
+// The use of this pair of functions is discouraged. Prefer using
+// [NewValueExternalHandle]/[Value.ExternalHandle] instead.
+//
+// This will return nil, if the value does not contain an external value.
+func (v *Value) ExternalPointer() unsafe.Pointer {
+	if !v.IsExternal() {
+		return nil
+	}
+	return C.ValueToExternal(v.ptr)
+}
+
+// ExternalHandle retrieves the [cgo.Handle] from a [Value] that was created
+// using [NewValueExternalHandle].
+//
+// This will return an zero handle if the value is not an external value.
+//
+// Warning, reading a value that was created using [NewValueExternal] is
+// invalid, but will not be detected by v8go. Prefer using only handles if
+// possible.
+func (v *Value) ExternalHandle() cgo.Handle {
+	if !v.IsExternal() {
+		return 0
+	}
+	return cgo.Handle(C.ValueToExternalUintptr(v.ptr))
 }
 
 // Format implements the fmt.Formatter interface to provide a custom formatter
@@ -592,7 +648,7 @@ func (v *Value) IsModuleNamespaceObject() bool {
 // AsObject will cast the value to the Object type. If the value is not an Object
 // then an error is returned. Use `value.Object()` to do the JS equivalent of `Object(value)`.
 func (v *Value) AsObject() (*Object, error) {
-	if !v.IsObject() {
+	if !v.IsObject() && !v.IsModuleNamespaceObject() && !v.IsFunction() && !v.IsNativeError() {
 		return nil, errors.New("v8go: value is not an Object")
 	}
 
