@@ -4,8 +4,16 @@
 
 package v8go
 
-// #include "v8go.h"
+// TODO: Can v8go.h be removed?
+
+// #include <stdlib.h>
+// #include "script_compiler.h"
 import "C"
+
+import (
+	"fmt"
+	"unsafe"
+)
 
 type CompileMode C.int
 
@@ -17,4 +25,19 @@ var (
 type CompilerCachedData struct {
 	Bytes    []byte
 	Rejected bool
+}
+
+func CompileModule(iso *Isolate, source, origin string) (*Module, error) {
+	cSource := C.CString(source)
+	cOrigin := C.CString(origin)
+	defer C.free(unsafe.Pointer(cSource))
+	defer C.free(unsafe.Pointer(cOrigin))
+	ptr := C.ScriptCompilerCompileModule(iso.ptr, cSource, cOrigin)
+	if ptr == nil {
+		return nil, fmt.Errorf("Error compiling module: %s", origin)
+	}
+	return &Module{
+		iso: iso.ptr,
+		ptr: ptr,
+	}, nil
 }
